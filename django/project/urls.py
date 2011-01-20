@@ -8,7 +8,7 @@ from django.conf.urls.defaults import *
 # admin.autodiscover()
 
 urlpatterns = patterns('',
-    (r'^sitemedia/(?P<path>.*)$', 'django.views.static.serve',
+    (r'^media/(?P<path>.*)$', 'django.views.static.serve',
      { 'document_root': settings.MEDIA_ROOT }),
 
     # Uncomment the admin/doc line below to enable admin documentation:

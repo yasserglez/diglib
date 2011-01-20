@@ -18,9 +18,6 @@ class FileHandler(object):
 
     mime_type = None
     
-    thumbnail_width = 256
-    thumbnail_height = 256
-
     @property
     def file_path(self):
         return self._file_path
@@ -37,7 +34,7 @@ class FileHandler(object):
     # Return an in-memory file object with a thumbnail for the document in PNG
     # format. The thumbnails should not exceed the given width and height.
     # The file should be closed by the caller.
-    def get_thumbnail(self):
+    def get_thumbnail(self, width, height):
         raise NotImplementedError()
 
     # Return an in-memory file object with the content of the file in UTF-8
@@ -49,7 +46,7 @@ class FileHandler(object):
     # Close opened resources. The default implementation does nothing.
     # Operations after this method is called should be considered errors.
     def close(self):
-        pass
+        raise NotImplementedError()
 
 
 class PlainTextHandler(FileHandler):
@@ -63,7 +60,7 @@ class PlainTextHandler(FileHandler):
     def get_metadata(self):
         return None
 
-    def get_thumbnail(self):
+    def get_thumbnail(self, width, height):
         return None
 
     def get_content(self):
@@ -98,15 +95,15 @@ class PDFHandler(FileHandler):
             metadata.seek(0)
         return metadata
 
-    def get_thumbnail(self):
+    def get_thumbnail(self, width, height):
         thumbnail = None
         if self._document.get_n_pages() > 0:
             page = self._document.get_page(0)
             page_width, page_height = page.get_size() 
             if page_width > page_height:
-                scale = self.thumbnail_width / page_width
+                scale = width / page_width
             else:
-                scale = self.thumbnail_height / page_height
+                scale = height / page_height
             image_width = int(scale * page_width)
             image_height = int(scale * page_height)
             surface = cairo.ImageSurface(cairo.FORMAT_RGB24, 
@@ -142,8 +139,7 @@ class PDFHandler(FileHandler):
 _HANDLERS = dict([(h.mime_type, h) for h in FileHandler.__subclasses__()])
 
 # Detect the MIME type of the file and return the appropiate handler.
-def get_handler(file_path):
-    mime_type = 'application/pdf' # TODO: Detect MIME type.
+def get_handler(file_path, mime_type):
     handler_class = _HANDLERS.get(mime_type, None)
     return None if handler_class is None else handler_class(file_path)
 
@@ -151,14 +147,14 @@ def get_handler(file_path):
 # Executing the module as a script for debugging proposes.
 if __name__ == '__main__':
     file_path = os.path.abspath(sys.argv[1])
-    handler = get_handler(file_path)
+    handler = get_handler(file_path, 'application/pdf')
     with codecs.open('mime_type.txt', encoding='utf8', mode='wt') as file:
         file.write(handler.mime_type)
     metadata = handler.get_metadata()
     if metadata:
         with codecs.open('metadata.txt', encoding='utf8', mode='wt') as file:
             file.write(metadata.getvalue())
-    thumbnail = handler.get_thumbnail()
+    thumbnail = handler.get_thumbnail(256, 256)
     if thumbnail:
         with open('thumbnail.png', mode='wb') as file:
             shutil.copyfileobj(thumbnail, file)
