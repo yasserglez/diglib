@@ -9,6 +9,7 @@ import cStringIO
 
 import cairo
 import poppler
+import magic
 
 
 # File handlers used to extract information from the different document formats
@@ -147,7 +148,11 @@ def get_handler(file_path, mime_type):
 # Executing the module as a script for debugging proposes.
 if __name__ == '__main__':
     file_path = os.path.abspath(sys.argv[1])
-    handler = get_handler(file_path, 'application/pdf')
+    magic_cookie = magic.open(magic.MAGIC_MIME_TYPE |
+                              magic.MAGIC_NO_CHECK_TOKENS)
+    magic_cookie.load()
+    mime_type = magic_cookie.file(file_path)
+    handler = get_handler(file_path, mime_type)
     with codecs.open('mime_type.txt', encoding='utf8', mode='wt') as file:
         file.write(handler.mime_type)
     metadata = handler.get_metadata()
