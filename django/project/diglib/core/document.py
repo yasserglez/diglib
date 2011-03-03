@@ -3,10 +3,9 @@
 
 class Document(object):
     
-    properties = ('hash_md5', 'hash_ssdeep', 
-                  'mime_type', 'document_path',
-                  'document_size', 'thumbnail_path', 
-                  'language_code', 'tags')
+    properties = ('hash_md5', 'hash_ssdeep', 'mime_type', 
+                  'content', 'document_path', 'document_size', 
+                  'thumbnail_path', 'language_code', 'tags')
 
     def __getattr__(self, name):
         if name in self.properties:
