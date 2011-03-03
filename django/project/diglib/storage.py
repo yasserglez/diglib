@@ -23,8 +23,12 @@ class DjangoDatabase(object):
     def __init__(self):
         raise NotImplementedError()    
 
-    def add(self, hash_md5, hash_ssdeep, mime_type, document_path,
-            document_size, thumbnail_path, language_code, tags):
+    def create(self, hash_md5, hash_ssdeep, mime_type, content, 
+               document_path, document_size, thumbnail_path, 
+               language_code, tags):
+        raise NotImplementedError()
+    
+    def add(self, document):
         raise NotImplementedError()
 
     def update_tags(self, hash_md5, tags):
@@ -62,8 +66,8 @@ class XapianIndex(object):
 
 
 
-STORAGE = Storage(documents_dir=os.path.join(settings.MEDIA_ROOT, 'diglib', 'documents'),
+STORAGE = Storage(index=XapianIndex(os.path.join(settings.MEDIA_ROOT, 'diglib', 'index')),
+                  database=DjangoDatabase(),                  
+                  documents_dir=os.path.join(settings.MEDIA_ROOT, 'diglib', 'documents'),
                   thumbnails_dir=os.path.join(settings.MEDIA_ROOT, 'diglib', 'thumbnails'),
-                  index=XapianIndex(os.path.join(settings.MEDIA_ROOT, 'diglib', 'index')),
-                  database=DjangoDatabase(),
                   thumbnail_width=256, thumbnail_height=256)

@@ -139,7 +139,7 @@ class PDFHandler(FileHandler):
 
 _HANDLERS = dict([(h.mime_type, h) for h in FileHandler.__subclasses__()])
 
-# Detect the MIME type of the file and return the appropiate handler.
+# Detect the MIME type of the file and return the appropriate handler.
 def get_handler(file_path, mime_type):
     handler_class = _HANDLERS.get(mime_type, None)
     return None if handler_class is None else handler_class(file_path)
