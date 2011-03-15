@@ -7,6 +7,7 @@ import magic
 import ssdeep
 
 from diglib.core import handlers
+from diglib.core.lang import guess_lang
 
 
 # File extension for MIME types.
@@ -80,11 +81,10 @@ class Storage(object):
                 file.write(thumbnail_data)
         # Add the document to the database and the index.
         content = handler.get_content()
-        language_code = None # TODO: Guess language.
-        document = \
-            self._database.create(hash_md5, hash_ssdeep, mime_type, content, 
-                                  document_path, document_size, thumbnail_path, 
-                                  language_code, initial_tags)
+        language_code = guess_lang(content)
+        document = self._database.create(hash_md5, hash_ssdeep, mime_type, content, 
+                                         document_path, document_size, thumbnail_path, 
+                                         language_code, initial_tags)
         self._check_retrievable(document)
         metadata = ' '.join([initial_metadata, handler.get_metadata()])
         self._index.add(document, metadata)
