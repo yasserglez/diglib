@@ -12,7 +12,7 @@ import bisect
 import codecs
 
 
-def guess_lang(text):
+def get_lang(text):
     if isinstance(text, str):
         text = unicode(text, 'utf-8')
     text = _normalize(text)
@@ -145,4 +145,4 @@ if __name__ == '__main__':
     file_path = os.path.abspath(sys.argv[1])
     with codecs.open(file_path, encoding='utf8', mode='r') as file:
         text = file.read()
-    print guess_lang(text)
+    print get_lang(text)
