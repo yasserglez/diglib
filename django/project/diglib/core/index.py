@@ -5,6 +5,10 @@ class Index(object):
 
     def add(self, document, metadata):
         raise NotImplementedError()
+    
+    # Check if the document can be retrieved with the available information.
+    def is_retrievable(self, hash_md5):
+        raise NotImplementedError()    
 
     def update_tags(self, hash_md5, tags):
         raise NotImplementedError()

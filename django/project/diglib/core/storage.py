@@ -23,15 +23,27 @@ class StorageError(Exception):
     pass
 
 
-class DuplicateError(StorageError):
+class DocumentError(StorageError):
+    pass 
+
+
+class DocumentNotFound(DocumentError):
     pass
-    
+
+
+class DuplicateError(DocumentError):
+    pass
+
 
 class ExactDuplicateError(DuplicateError):
     pass
 
 
 class SimilarDuplicateError(DuplicateError):
+    pass
+
+
+class NotRetrievableError(DocumentError):
     pass
 
 
@@ -54,12 +66,14 @@ class Storage(object):
         self._thumbnails_dir = thumbnails_dir
         self._thumbnail_width = thumbnail_width
         self._thumbnail_height = thumbnail_height
-        self._magic = magic.open(magic.MAGIC_MIME_TYPE |
-                                 magic.MAGIC_NO_CHECK_TOKENS)
+        self._magic = magic.open(magic.MAGIC_MIME_TYPE | magic.MAGIC_NO_CHECK_TOKENS)
         self._magic.load()
 
     def get(self, hash_md5):
-        return self._database.get(hash_md5)
+        document = self._database.get(hash_md5)
+        if document is None:
+            raise DocumentNotFound()
+        return document
 
     def add(self, document_data, initial_metadata, initial_tags):
         document_size = len(document_data)
@@ -71,7 +85,7 @@ class Storage(object):
         # Save the document.
         document_path = os.path.join(*path) + self._EXTENSIONS[mime_type]
         os.makedirs(os.path.join(self._documents_dir, os.path.join(*path[:-1]))) 
-        with open(document_path, 'wb') as file:
+        with open(os.path.join(self.documents_dir, document_path), 'wb') as file:
             file.write(document_data)
         # Save the thumbnail (if any).
         handler = get_handler(document_path, mime_type)
@@ -79,7 +93,7 @@ class Storage(object):
         thumbnail_path = os.path.join(*path) + '.png' if thumbnail_data else None
         if thumbnail_path:
             os.makedirs(os.path.join(self._thumbnails_dir, os.path.join(*path[:-1])))
-            with open(thumbnail_path, 'wb') as file:
+            with open(os.path.join(self.thumbnail_path, thumbnail_path), 'wb') as file:
                 file.write(thumbnail_data)
         # Add the document to the database and the index.
         content = handler.get_content()
@@ -87,10 +101,13 @@ class Storage(object):
         document = self._database.create(hash_md5, hash_ssdeep, mime_type, content, 
                                          document_path, document_size, thumbnail_path, 
                                          language_code, initial_tags)
-        self._check_retrievable(document)
-        metadata = ' '.join([initial_metadata, handler.get_metadata()])
-        self._index.add(document, metadata)
-        self._database.add(document)
+        self._index.add(document, ' '.join([initial_metadata, handler.get_metadata()]))
+        try:
+            # Check if the document can be retrieved later.
+            self._check_retrievable(document)
+        except:
+            self.delete(document.hash_md5)
+            raise # Re-raise the exception.
 
     def update_tags(self, hash_md5, tags):
         self._index.update_tags(hash_md5, tags)
@@ -100,6 +117,11 @@ class Storage(object):
         return self._index.search(query, start_index, end_index)
 
     def delete(self, hash_md5):
+        document = self._database.get(hash_md5)
+        os.remove(os.path.join(self.documents_dir, document.document_path))
+        thumbnail_full_path = os.path.join(self.thumbnail_path, document.thumbnail_path)
+        if os.path.isfile(thumbnail_full_path):
+            os.remove(thumbnail_full_path)
         self._database.delete(hash_md5)
         self._index.delete(hash_md5)
 
@@ -122,4 +144,6 @@ class Storage(object):
 
     # Check if the document can be retrieved with the available information.
     def _check_retrievable(self, document):
-        raise NotImplementedError()
+        if not (self._database.is_retrievable(document.hash_md5) or
+                self._index.is_retrievable(document.hash_md5)):
+            raise NotRetrievableError()
