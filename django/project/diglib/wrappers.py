@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
 
-import os
-
 import xapian
-from django.conf import settings
 
 from diglib.core.index import Index
+from diglib.core.document import Document
 from diglib.core.database import Database
 from diglib.core.storage import Storage
 from diglib.core.lang import SUPPORTED_LANGS, get_stopwords
 
 
-class DjangoDocument(object):
+class DjangoDocument(Document):
 
     def __init__(self):
         raise NotImplementedError()
@@ -20,10 +18,10 @@ class DjangoDocument(object):
         raise NotImplementedError()
 
 
-class DjangoDatabase(object):
+class DjangoDatabase(Database):
     
     def __init__(self):
-        raise NotImplementedError()    
+        pass
 
     def create(self, hash_md5, hash_ssdeep, mime_type, content,
                document_path, document_size, thumbnail_path,
@@ -136,10 +134,3 @@ class XapianIndex(object):
         final_query = xapian.Query(xapian.Query.OP_OR, tag_query, metadata_query)
         final_query = xapian.Query(xapian.Query.OP_OR, final_query, content_query)
         return final_query
-
-
-STORAGE = Storage(index=XapianIndex(os.path.join(settings.MEDIA_ROOT, 'diglib', 'index')),
-                  database=DjangoDatabase(),                  
-                  documents_dir=os.path.join(settings.MEDIA_ROOT, 'diglib', 'documents'),
-                  thumbnails_dir=os.path.join(settings.MEDIA_ROOT, 'diglib', 'thumbnails'),
-                  thumbnail_width=256, thumbnail_height=256)
