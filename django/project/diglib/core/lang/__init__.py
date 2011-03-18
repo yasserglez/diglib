@@ -39,12 +39,12 @@ def _load_blocks():
                 names.append(name)
     return endpoints, names
 
-ENDPOINTS, NAMES = _load_blocks()
+BLOCK_ENDPOINTS, BLOCK_NAMES = _load_blocks()
 
 def _unicode_block(c):
     # Returns the name of the Unicode block containing the character.
-    ix = bisect.bisect_left(ENDPOINTS, ord(c))
-    return NAMES[ix]
+    ix = bisect.bisect_left(BLOCK_ENDPOINTS, ord(c))
+    return BLOCK_NAMES[ix]
 
 
 def _make_nonalpha_re():
@@ -57,9 +57,9 @@ def _make_nonalpha_re():
     nonalpha = u''.join(nonalpha)
     return re.compile(nonalpha)
 
-nonalpha_re = _make_nonalpha_re()
-whitespace_re = re.compile('\s+', re.UNICODE)
-trigraph_re = re.compile(r'(.{3})\s+(.*)')
+NONALPHA_RE = _make_nonalpha_re()
+WHITESPACE_RE = re.compile('\s+', re.UNICODE)
+TRIGRAPH_RE = re.compile(r'(.{3})\s+(.*)')
 
 
 def _load_models():
@@ -72,7 +72,7 @@ def _load_models():
             with codecs.open(model_path, encoding='utf8', mode='r') as file:
                 model = {}
                 for line in file:
-                    match = trigraph_re.search(line)
+                    match = TRIGRAPH_RE.search(line)
                     if match:
                         model[match.group(1)] = int(match.group(2))
             models[model_file.lower()] = model
@@ -84,8 +84,8 @@ MODELS = _load_models()
 def _normalize(text):
     # Convert to normalized Unicode, remove non-alpha and compress spaces.
     text = unicodedata.normalize('NFC', text)
-    text = nonalpha_re.sub(' ', text)
-    text = whitespace_re.sub(' ', text)
+    text = NONALPHA_RE.sub(' ', text)
+    text = WHITESPACE_RE.sub(' ', text)
     return text
 
 
