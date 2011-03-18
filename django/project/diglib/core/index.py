@@ -17,9 +17,9 @@ class Index(object):
         raise NotImplementedError()
 
     # Execute the query and return a tuple with two elements: the total number
-    # of results and a list with the MD5 hash of the documents between the
+    # of results and a list with the MD5 hashes of the documents between the
     # start and end indexes.
-    def search(self, query, start_index=0, end_index=None):
+    def search(self, query, start_index, end_index):
         raise NotImplementedError()
 
     def close(self):

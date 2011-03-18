@@ -133,7 +133,7 @@ class Storage(object):
     def _check_duplicated(self, document_size, hash_md5, hash_ssdeep):
         if self._database.get(hash_md5) is not None:
             raise ExactDuplicateError()
-        eps = max(0.25 * document_size, 1024)
+        eps = max(0.25 * document_size, 102400)
         lower_size = max(0, document_size - eps)
         upper_size = document_size + eps
         documents = self._database.get_similar_documents(lower_size, upper_size)
