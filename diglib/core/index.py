@@ -2,53 +2,37 @@
 
 import xapian
 
-from diglib.core.index import Index
-from diglib.core.document import Document
-from diglib.core.database import Database
-from diglib.core.storage import Storage
 from diglib.core.lang import SUPPORTED_LANGS, get_stopwords
 
 
-class DjangoDocument(Document):
+class Index(object):
 
-    def __init__(self):
+    def __init__(self, index_dir):
+        pass 
+
+    def add(self, document, metadata):
         raise NotImplementedError()
-
-    def _get_property(self, name):
-        raise NotImplementedError()
-
-
-class DjangoDatabase(Database):
     
-    def __init__(self):
-        pass
-
-    def create(self, hash_md5, hash_ssdeep, mime_type, content,
-               document_path, document_size, thumbnail_path,
-               language_code, tags):
-        raise NotImplementedError()
-
+    # Check if the document can be retrieved with the available information.
     def is_retrievable(self, hash_md5):
-        raise NotImplementedError()
-    
-    def update_tags(self, hash_md5, tags):
-        raise NotImplementedError()
-    
-    def get(self, hash_md5):
-        raise NotImplementedError()
+        raise NotImplementedError()    
 
-    def get_similar_documents(self, lower_size, upper_size):
+    def update_tags(self, hash_md5, tags):
         raise NotImplementedError()
 
     def delete(self, hash_md5):
+        raise NotImplementedError()
+
+    # Get the MD5 hashes of the documents with the given tags that match the query. 
+    def search(self, query, tags):
         raise NotImplementedError()
 
     def close(self):
         raise NotImplementedError()
 
 
-class XapianIndex(object):
-    
+class XapianIndex(Index):
+
     # Prefixes of the terms in the index.
     ID_PREFIX = 'I'
     CONTENT_PREFIX = 'C'
@@ -56,6 +40,7 @@ class XapianIndex(object):
     TAG_PREFIX = 'T'
     
     def __init__(self, index_dir):
+        super(XapianIndex, self).__init__(index_dir)
         self._index = xapian.WritableDatabase(index_dir, xapian.DB_CREATE_OR_OPEN)
         self._stoppers = {}
         for lang in SUPPORTED_LANGS:
@@ -81,7 +66,7 @@ class XapianIndex(object):
 
     def is_retrievable(self, hash_md5):
         xapian_document = self._get_xapian_document(hash_md5)
-        return xapian_document.termlist_count() > 100
+        return xapian_document.termlist_count() >= 100
 
     def update_tags(self, hash_md5, tags):
         xapian_document = self._get_xapian_document(hash_md5)
@@ -97,16 +82,18 @@ class XapianIndex(object):
         self._index.delete_document(self.ID_PREFIX + hash_md5)
         self._index.flush()
 
-    def search(self, query, start_index, end_index):
+    def search(self, query, tags):
         results = []
         enquire = xapian.Enquire(self._index)
         parsed_query = self._parse_query(query)
-        enquire.set_query(parsed_query)
-        mset = enquire.get_mset(start_index, (end_index - start_index) + 1, 100)
+        filter = xapian.Query(xapian.Query.OP_AND, [self.TAG_PREFIX + t for t in tags])
+        filter = xapian.Query(xapian.Query.OP_SCALE_WEIGHT, filter, 0)
+        enquire.set_query(xapian.Query(xapian.Query.OP_AND, filter, parsed_query))
+        mset = enquire.get_mset(0, self._index.get_doccount())
         for match in mset:
             xapian_document = match.get_document()
             results.append(xapian_document.get_data())
-        return (mset.get_matches_estimated(), results)
+        return results
 
     def close(self):
         self._index.flush()

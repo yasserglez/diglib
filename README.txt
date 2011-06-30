@@ -1,3 +1,5 @@
+diglib: Digital Library
+
 python-poppler
 python-cairo
 python-magic

@@ -15,3 +15,12 @@ class Document(object):
 
     def _get_property(self, name):
         raise NotImplementedError()
+
+
+class DjangoDocument(Document):
+
+    def __init__(self):
+        raise NotImplementedError()
+
+    def _get_property(self, name):
+        raise NotImplementedError()
