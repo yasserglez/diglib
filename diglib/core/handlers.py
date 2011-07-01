@@ -19,12 +19,11 @@ class FileHandler(object):
 
     mime_type = None
     
-    @property
-    def file_path(self):
-        return self._file_path
-
     def __init__(self, file_path):
         self._file_path = file_path
+
+    def get_file_path(self):
+        return self._file_path
         
     # Return an in-memory file object with the metadata of the file in UTF-8
     # encoded plain text. If no metadata is available it should return None.
@@ -137,7 +136,8 @@ class PDFHandler(FileHandler):
         pass
 
 
-_HANDLERS = dict([(h.mime_type, h) for h in FileHandler.__subclasses__()])
+_HANDLERS = dict([(handler.mime_type, handler) 
+                  for handler in FileHandler.__subclasses__()])
 
 # Detect the MIME type of the file and return the appropriate handler.
 def get_handler(file_path, mime_type):

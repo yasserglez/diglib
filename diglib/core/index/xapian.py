@@ -2,33 +2,8 @@
 
 import xapian
 
-from diglib.core.lang import SUPPORTED_LANGS, get_stopwords
-
-
-class Index(object):
-
-    def __init__(self, index_dir):
-        pass 
-
-    def add(self, document, metadata):
-        raise NotImplementedError()
-    
-    # Check if the document can be retrieved with the available information.
-    def is_retrievable(self, hash_md5):
-        raise NotImplementedError()    
-
-    def update_tags(self, hash_md5, tags):
-        raise NotImplementedError()
-
-    def delete(self, hash_md5):
-        raise NotImplementedError()
-
-    # Get the MD5 hashes of the documents with the given tags that match the query. 
-    def search(self, query, tags):
-        raise NotImplementedError()
-
-    def close(self):
-        raise NotImplementedError()
+from diglib.core.index import Index
+from diglib.core.lang import LANGUAGES, get_stopwords
 
 
 class XapianIndex(Index):
@@ -43,7 +18,7 @@ class XapianIndex(Index):
         super(XapianIndex, self).__init__(index_dir)
         self._index = xapian.WritableDatabase(index_dir, xapian.DB_CREATE_OR_OPEN)
         self._stoppers = {}
-        for lang in SUPPORTED_LANGS:
+        for lang in LANGUAGES:
             stopper = xapian.SimpleStopper()
             for stopword in get_stopwords(lang):
                 stopper.add(stopword)
@@ -86,7 +61,7 @@ class XapianIndex(Index):
         results = []
         enquire = xapian.Enquire(self._index)
         parsed_query = self._parse_query(query)
-        filter = xapian.Query(xapian.Query.OP_AND, [self.TAG_PREFIX + t for t in tags])
+        filter = xapian.Query(xapian.Query.OP_AND, [self.TAG_PREFIX + tag for tag in tags])
         filter = xapian.Query(xapian.Query.OP_SCALE_WEIGHT, filter, 0)
         enquire.set_query(xapian.Query(xapian.Query.OP_AND, filter, parsed_query))
         mset = enquire.get_mset(0, self._index.get_doccount())
@@ -110,7 +85,7 @@ class XapianIndex(Index):
         tag_query = parser.parse_query(query, 0, self.TAG_PREFIX)
         metadata_query = parser.parse_query(query, 0, self.METADATA_PREFIX)
         content_query = parser.parse_query(query, xapian.QueryParser.FLAG_DEFAULT, self.CONTENT_PREFIX)
-        for lang in SUPPORTED_LANGS:
+        for lang in LANGUAGES:
             parser.set_stemmer(xapian.Stem(lang))
             parser.set_stemming_strategy(xapian.QueryParser.STEM_SOME)
             parser.set_stopper(self._stoppers[lang])

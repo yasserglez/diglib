@@ -12,7 +12,7 @@ import bisect
 import codecs
 
 
-SUPPORTED_LANGS = ('en', 'es', 'it', 'fr', 'de')
+LANGUAGES = ('en', 'es', 'it', 'fr', 'de')
 
 
 def get_lang(text):

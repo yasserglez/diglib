@@ -6,20 +6,45 @@ import hashlib
 import magic
 import ssdeep
 
-from diglib import error
 from diglib.core.handlers import get_handler
 from diglib.core.lang import get_lang
 
 
-# File extension for supported MIME types.
-_EXTENSIONS = {
-    'text/plain': '.txt',
-    'application/pdf': '.pdf'
-}
+class DigitalLibraryError(Exception):
+    pass
+
+
+class DocumentError(DigitalLibraryError):
+    pass 
+
+
+class DocumentNotFound(DocumentError):
+    pass
+
+
+class DuplicateError(DocumentError):
+    pass
+
+
+class ExactDuplicateError(DuplicateError):
+    pass
+
+
+class SimilarDuplicateError(DuplicateError):
+    pass
+
+
+class NotRetrievableError(DocumentError):
+    pass
 
 
 class DigitalLibrary(object):
-
+    
+    MIME_TYPES = {
+        'text/plain': '.txt',
+        'application/pdf': '.pdf'
+    }
+    
     def __init__(self, library_dir, index_class, database_class):
         super(DigitalLibrary, self).__init__()
         self._index = index_class(os.path.join(library_dir, 'index'))
@@ -33,7 +58,7 @@ class DigitalLibrary(object):
     def get(self, hash_md5):
         document = self._database.get(hash_md5)
         if document is None:
-            raise error.DocumentNotFound()
+            raise DocumentNotFound()
         return document
 
     def add(self, document_path, initial_tags):
@@ -46,7 +71,7 @@ class DigitalLibrary(object):
         path = map(lambda i: hash_md5[i-4:i], [4, 8, 12, 16, 20, 24, 28, 32])
         mime_type = self._magic.buffer(document_data)
         # Save the document.
-        document_path = os.path.join(*path) + self._EXTENSIONS[mime_type]
+        document_path = os.path.join(*path) + self.MIME_TYPES[mime_type]
         os.makedirs(os.path.join(self._documents_dir, os.path.join(*path[:-1])))
         with open(os.path.join(self.documents_dir, document_path), 'wb') as file:
             file.write(document_data)
@@ -69,9 +94,16 @@ class DigitalLibrary(object):
         try:
             # Check if the document can be retrieved later.
             self._check_retrievable(document)
-        except:
+        except NotRetrievableError:
             self.delete(document.hash_md5)
-            raise # Re-raise the exception.
+            raise # Propagate the exception.
+        
+    def add_tag(self, tag):
+        self._database.add_tag(tag)
+
+    def rename_tag(self, old_name, new_name):
+        self._index.rename_tag(old_name, new_name)
+        self._database.rename_tag(old_name, new_name)        
 
     def update_tags(self, hash_md5, tags):
         self._index.update_tags(hash_md5, tags)
@@ -97,7 +129,7 @@ class DigitalLibrary(object):
     # Check if the document (or a similar document) is already in the database.
     def _check_duplicated(self, document_size, hash_md5, hash_ssdeep):
         if self._index.get(hash_md5) is not None:
-            raise error.ExactDuplicateError()
+            raise ExactDuplicateError()
         eps = max(0.25 * document_size, 102400)
         lower_size = max(0, document_size - eps)
         upper_size = document_size + eps
@@ -105,10 +137,10 @@ class DigitalLibrary(object):
         for document in documents:
             score = ssdeep.compare(hash_ssdeep, document.hash_ssdeep)
             if score >= 75:
-                raise error.SimilarDuplicateError()
+                raise SimilarDuplicateError()
 
     # Check if the document can be retrieved with the available information.
     def _check_retrievable(self, document):
         if not (self._database.is_retrievable(document.hash_md5) or
                 self._index.is_retrievable(document.hash_md5)):
-            raise error.NotRetrievableError()
+            raise NotRetrievableError()
