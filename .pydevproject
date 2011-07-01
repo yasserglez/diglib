@@ -10,8 +10,5 @@
 </pydev_variables_property>
 <pydev_pathproperty name="org.python.pydev.PROJECT_SOURCE_PATH">
 <path>/diglib</path>
-<path>/diglib/django</path>
-<path>/diglib/scripts</path>
-<path>/diglib/packages</path>
 </pydev_pathproperty>
 </pydev_project>
