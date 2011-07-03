@@ -81,15 +81,44 @@ class TestDigitalLibrary(unittest.TestCase):
         with self.assertRaises(DocumentNotFound):
             self._library.get(pdf_document.hash_md5)
 
-    def _assert_documents_equal(self, doc1, doc2):
-        self.assertEqual(doc1.hash_md5, doc2.hash_md5)
-        self.assertEqual(doc1.hash_ssdeep, doc2.hash_ssdeep)
-        self.assertEqual(doc1.mime_type, doc2.mime_type)
-        self.assertEqual(doc1.document_path, doc2.document_path)
-        self.assertEqual(doc1.document_size, doc2.document_size)
-        self.assertEqual(doc1.thumbnail_path, doc2.thumbnail_path)
-        self.assertEqual(doc1.language_code, doc2.language_code)
-        self.assertSetEqual(doc1.tags, doc2.tags)
+    def test_get_tags(self):
+        self.assertSetEqual(self._library.get_tags(), set())
+
+    def test_add_tag(self):
+        self._library.add_tag('a')
+        self.assertSetEqual(self._library.get_tags(), set('a'))
+        self._library.add_tag('b')
+        self._library.add_tag('c')
+        self.assertSetEqual(self._library.get_tags(), set('abc'))
+
+    def test_rename_tag_free(self):
+        self._library.add_tag('a')
+        self._library.rename_tag('a', 'b')
+        self.assertSetEqual(self._library.get_tags(), set('b'))
+
+    def test_rename_tag_assigned(self):
+        original = self.test_add_txt()
+        self._library.rename_tag('veda', 'a')
+        modified = self._library.get(original.hash_md5)
+        self.assertSetEqual(modified.tags, set(['vine', 'copula', 'a']))
+        self.assertListEqual(self._library.search('', set(['veda'])), [])
+        self.assertListEqual(self._library.search('', set(['a'])), [original.hash_md5])
+
+    def test_update_tags(self):
+        document = self.test_add_txt()
+        self.assertListEqual(self._library.search('', set('abc')), [])
+        self._library.update_tags(document.hash_md5, set('abc'))
+        self.assertListEqual(self._library.search('', set('abc')), [document.hash_md5])
+
+    def _assert_documents_equal(self, x, y):
+        self.assertEqual(x.hash_md5, y.hash_md5)
+        self.assertEqual(x.hash_ssdeep, y.hash_ssdeep)
+        self.assertEqual(x.mime_type, y.mime_type)
+        self.assertEqual(x.document_path, y.document_path)
+        self.assertEqual(x.document_size, y.document_size)
+        self.assertEqual(x.thumbnail_path, y.thumbnail_path)
+        self.assertEqual(x.language_code, y.language_code)
+        self.assertSetEqual(x.tags, y.tags)
 
 
 if __name__ == '__main__':

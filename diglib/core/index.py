@@ -76,6 +76,19 @@ class XapianIndex(Index):
         num_terms = xapian_document.termlist_count()
         return num_terms >= 100
 
+    def rename_tag(self, old_name, new_name):
+        old_term = self.TAG_PREFIX + old_name
+        if self._index.get_termfreq(old_term) > 0:
+            new_term = self.TAG_PREFIX + new_name
+            enquire = xapian.Enquire(self._index)
+            enquire.set_query(xapian.Query(old_term))
+            mset = enquire.get_mset(0, self._index.get_doccount())
+            for match in mset:
+                xapian_document = match.document
+                xapian_document.remove_term(old_term)
+                xapian_document.add_boolean_term(new_term)
+                self._index.replace_document(xapian_document.get_docid(), xapian_document)
+
     def update_tags(self, hash_md5, tags):
         xapian_document = self._get_xapian_document(hash_md5)
         for term in xapian_document:
@@ -93,13 +106,13 @@ class XapianIndex(Index):
     def search(self, query, tags):
         results = []
         enquire = xapian.Enquire(self._index)
-        parsed_query = self._parse_query(query)
+        parsed_query = self._parse_query(query) if query.strip() else xapian.Query.MatchAll
         filter = xapian.Query(xapian.Query.OP_AND, [self.TAG_PREFIX + tag for tag in tags])
         filter = xapian.Query(xapian.Query.OP_SCALE_WEIGHT, filter, 0)
         enquire.set_query(xapian.Query(xapian.Query.OP_AND, filter, parsed_query))
         mset = enquire.get_mset(0, self._index.get_doccount())
         for match in mset:
-            xapian_document = match.get_document()
+            xapian_document = match.document
             results.append(xapian_document.get_data())
         return results
 

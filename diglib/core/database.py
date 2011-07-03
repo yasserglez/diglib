@@ -40,6 +40,9 @@ class Database(object):
     def delete(self, hash_md5):
         raise NotImplementedError()
     
+    def get_tags(self):
+        raise NotImplementedError()
+    
     def add_tag(self, tag):
         raise NotImplementedError()
 
@@ -153,7 +156,16 @@ class SQLAlchemyDatabase(Database):
             session.delete(doc)
             session.commit()
         session.close()
-            
+
+    def get_tags(self):
+        tags = set()
+        session = self._sessionmaker()
+        query = session.query(SQLAlchemyTag)
+        for tag in query.all():
+            tags.add(tag.name)
+        session.close()
+        return tags
+
     def add_tag(self, tag):
         session = self._sessionmaker()
         tag = SQLAlchemyTag(tag)

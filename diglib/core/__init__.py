@@ -107,13 +107,16 @@ class DigitalLibrary(object):
             raise # Propagate the exception.
         document.document_path = document_abspath 
         return document
+    
+    def get_tags(self):
+        return self._database.get_tags()
 
     def add_tag(self, tag):
         self._database.add_tag(tag)
 
     def rename_tag(self, old_name, new_name):
         self._index.rename_tag(old_name, new_name)
-        self._database.rename_tag(old_name, new_name)        
+        self._database.rename_tag(old_name, new_name)
 
     def update_tags(self, hash_md5, tags):
         self._index.update_tags(hash_md5, tags)
