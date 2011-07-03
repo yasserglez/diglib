@@ -1,0 +1,5 @@
+Resumen
+
+Este trabajo presenta el uso de vines y cópulas en Algoritmos con
+Estimación de Distribuciones (EDA).
+

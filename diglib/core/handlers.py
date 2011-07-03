@@ -67,8 +67,9 @@ class PlainTextHandler(FileHandler):
         self._file.seek(0)
         content = cStringIO.StringIO()
         shutil.copyfileobj(self._file, content)
-        content.seek(0)
-        return content
+        data = content.getvalue()
+        content.close()
+        return data
 
     def close(self):
         self._file.close()
@@ -92,8 +93,9 @@ class PDFHandler(FileHandler):
                     metadata = cStringIO.StringIO()
                 metadata.write(value.encode('utf8') + ' ')
         if metadata is not None:
-            metadata.seek(0)
-        return metadata
+            data = metadata.getvalue()
+            metadata.close()
+            return data
 
     def get_thumbnail(self, width, height):
         thumbnail = None
@@ -116,8 +118,10 @@ class PDFHandler(FileHandler):
             page.render(context)
             thumbnail = cStringIO.StringIO()
             surface.write_to_png(thumbnail)
-            thumbnail.seek(0)
-        return thumbnail
+        if thumbnail is not None:
+            data = thumbnail.getvalue()
+            thumbnail.close()
+            return data
 
     def get_content(self):
         content = None
@@ -129,14 +133,16 @@ class PDFHandler(FileHandler):
             content = cStringIO.StringIO()
             shutil.copyfileobj(output, content)
             output.close()
-            content.seek(0)
-        return content
+        if content is not None:
+            data = content.getvalue()
+            content.close()
+            return data
 
     def close(self):
         pass
 
 
-_HANDLERS = dict([(handler.mime_type, handler) 
+_HANDLERS = dict([(handler.mime_type, handler)
                   for handler in FileHandler.__subclasses__()])
 
 # Detect the MIME type of the file and return the appropriate handler.

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from diglib.core import DigitalLibrary
-from diglib.core.index.xapian import XapianIndex
-from diglib.core.database.sqlalchemy import SQLAlchemyDatabase
+from diglib.core.index import XapianIndex
+from diglib.core.database import SQLAlchemyDatabase
 from diglib.gui import GUI
 
 

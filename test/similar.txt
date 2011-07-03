@@ -1,0 +1,14 @@
+Este trabajo presenta el uso de vines y cópulas en Algoritmos con
+Estimación de Distribuciones (EDA). Los EDA son algoritmos de
+optimización evolutivos basados en la estimación y simulación de
+distribuciones de probabilidad. Las cópulas son funciones utilizadas
+para describir la estructura de dependencia de funciones de
+distribuciones de probabilidad. Los vines son modelos gráficos que
+representan distribuciones multivariadas factorizando la densidad
+multivariada en cópulas bivariadas y funciones de densidad
+univariadas. Se introduce el algoritmo Vine Estimation of Distribution
+Algorithm (VEDA) que modela la distribución de búsqueda utilizando
+vines. VEDA es ejecutado en un grupo de funciones de prueba, mostrando
+que ofrece nuevas posibilidades para la optimización de problemas con
+variados patrones de dependencia.
+

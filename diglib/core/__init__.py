@@ -44,14 +44,16 @@ class DigitalLibrary(object):
         'text/plain': '.txt',
         'application/pdf': '.pdf'
     }
-    
+
     def __init__(self, library_dir, index_class, database_class):
         super(DigitalLibrary, self).__init__()
+        if not os.path.isdir(library_dir):
+            os.makedirs(library_dir)
         self._index = index_class(os.path.join(library_dir, 'index'))
         self._database = database_class(os.path.join(library_dir, 'database.db'))
         self._documents_dir = os.path.join(library_dir, 'documents')
         self._thumbnails_dir = os.path.join(library_dir, 'thumbnails')
-        self._thumbnail_sizes = {'small' : 32, 'normal' : 64, 'large' : 128}
+        self._thumbnail_sizes = {'small' : 64, 'normal' : 128, 'large' : 256}
         self._magic = magic.open(magic.MAGIC_MIME_TYPE | magic.MAGIC_NO_CHECK_TOKENS)
         self._magic.load()
 
@@ -59,45 +61,53 @@ class DigitalLibrary(object):
         document = self._database.get(hash_md5)
         if document is None:
             raise DocumentNotFound()
+        document_abspath = os.path.join(self._documents_dir, document.document_path)
+        document.document_path = document_abspath
         return document
 
-    def add(self, document_path, initial_tags):
+    def add(self, document_path, tags):
         with open(document_path) as file:
-            document_data = file.read() 
+            document_data = file.read()
+        # Check if the document is already in the library.
         document_size = len(document_data)
         hash_md5 = hashlib.md5(document_data).hexdigest()
         hash_ssdeep = ssdeep.hash(document_data)
         self._check_duplicated(document_size, hash_md5, hash_ssdeep)
+        # Copy the document into the library directory.
         path = map(lambda i: hash_md5[i-4:i], [4, 8, 12, 16, 20, 24, 28, 32])
         mime_type = self._magic.buffer(document_data)
-        # Save the document.
         document_path = os.path.join(*path) + self.MIME_TYPES[mime_type]
-        os.makedirs(os.path.join(self._documents_dir, os.path.join(*path[:-1])))
-        with open(os.path.join(self.documents_dir, document_path), 'wb') as file:
+        document_abspath = os.path.join(self._documents_dir, document_path)
+        os.makedirs(os.path.dirname(document_abspath))
+        with open(document_abspath, 'wb') as file:
             file.write(document_data)
-        # Save the thumbnail.
-        handler = get_handler(document_path, mime_type)
+        # Generate the thumbnails.
+        thumbnail_path = None
+        handler = get_handler(document_abspath, mime_type)
         for size_name, size in self._thumbnail_sizes.iteritems():
             thumbnail_data = handler.get_thumbnail(size, size)
             if thumbnail_data:
                 thumbnail_path = os.path.join(*path) + '.png'
-                os.makedirs(os.path.join(self._thumbnails_dir, size_name, os.path.dirname(thumbnail_path)))
-                with open(os.path.join(self.thumbnail_path, size_name, thumbnail_path), 'wb') as file:
+                thumbnail_abspath = os.path.join(self._thumbnails_dir, size_name, thumbnail_path)
+                os.makedirs(os.path.dirname(thumbnail_abspath))
+                with open(thumbnail_abspath, 'wb') as file:
                     file.write(thumbnail_data)
         # Add the document to the database and the index.
         content = handler.get_content()
         language_code = get_lang(content)
-        document = self._database.create(hash_md5, hash_ssdeep, mime_type, content, 
-                                         document_path, document_size, thumbnail_path, 
-                                         language_code, initial_tags)
-        self._index.add(document, ' '.join(handler.get_metadata()))
+        document = self._database.create(hash_md5, hash_ssdeep, mime_type, content,
+                                         document_path, document_size, thumbnail_path,
+                                         language_code, tags)
+        self._index.add(document, handler.get_metadata())
+        # Check if the document can be retrieved with the available information.
         try:
-            # Check if the document can be retrieved later.
             self._check_retrievable(document)
         except NotRetrievableError:
             self.delete(document.hash_md5)
             raise # Propagate the exception.
-        
+        document.document_path = document_abspath 
+        return document
+
     def add_tag(self, tag):
         self._database.add_tag(tag)
 
@@ -114,11 +124,12 @@ class DigitalLibrary(object):
 
     def delete(self, hash_md5):
         document = self._database.get(hash_md5)
-        os.remove(os.path.join(self.documents_dir, document.document_path))
-        for size_name in self._thumbnail_sizes.iterkeys():
-            thumbnail_file = os.path.join(self._thumbnails_dir, size_name, document.thumbnail_path)
-            if os.path.isfile(thumbnail_file):
-                os.remove(thumbnail_file)
+        os.remove(os.path.join(self._documents_dir, document.document_path))
+        if document.thumbnail_path:
+            for size_name in self._thumbnail_sizes.iterkeys():
+                thumbnail_abspath = os.path.join(self._thumbnails_dir, size_name, document.thumbnail_path)
+                if os.path.isfile(thumbnail_abspath):
+                    os.remove(thumbnail_abspath)
         self._database.delete(hash_md5)
         self._index.delete(hash_md5)
 
@@ -128,7 +139,7 @@ class DigitalLibrary(object):
 
     # Check if the document (or a similar document) is already in the database.
     def _check_duplicated(self, document_size, hash_md5, hash_ssdeep):
-        if self._index.get(hash_md5) is not None:
+        if self._database.get(hash_md5) is not None:
             raise ExactDuplicateError()
         eps = max(0.25 * document_size, 102400)
         lower_size = max(0, document_size - eps)
