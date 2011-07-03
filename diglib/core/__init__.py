@@ -66,6 +66,7 @@ class DigitalLibrary(object):
         return document
 
     def add(self, document_path, tags):
+        tags = set([self._normalize_tag(tag) for tag in tags])
         with open(document_path) as file:
             document_data = file.read()
         # Check if the document is already in the library.
@@ -112,17 +113,22 @@ class DigitalLibrary(object):
         return self._database.get_tags()
 
     def add_tag(self, tag):
+        tag = self._normalize_tag(tag)
         self._database.add_tag(tag)
 
     def rename_tag(self, old_name, new_name):
+        old_name = self._normalize_tag(old_name)
+        new_name = self._normalize_tag(new_name)
         self._index.rename_tag(old_name, new_name)
         self._database.rename_tag(old_name, new_name)
 
     def update_tags(self, hash_md5, tags):
+        tags = set([self._normalize_tag(tag) for tag in tags])
         self._index.update_tags(hash_md5, tags)
         self._database.update_tags(hash_md5, tags)
 
     def search(self, query, tags):
+        tags = set([self._normalize_tag(tag) for tag in tags])
         return self._index.search(query, tags)
 
     def delete(self, hash_md5):
@@ -158,3 +164,6 @@ class DigitalLibrary(object):
         if not (self._database.is_retrievable(document.hash_md5) or
                 self._index.is_retrievable(document.hash_md5)):
             raise NotRetrievableError()
+    
+    def _normalize_tag(self, tag):
+        return tag.lower()
