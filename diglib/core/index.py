@@ -106,10 +106,13 @@ class XapianIndex(Index):
     def search(self, query, tags):
         results = []
         enquire = xapian.Enquire(self._index)
-        parsed_query = self._parse_query(query) if query.strip() else xapian.Query.MatchAll
-        filter = xapian.Query(xapian.Query.OP_AND, [self.TAG_PREFIX + tag for tag in tags])
-        filter = xapian.Query(xapian.Query.OP_SCALE_WEIGHT, filter, 0)
-        enquire.set_query(xapian.Query(xapian.Query.OP_AND, filter, parsed_query))
+        query = self._parse_query(query) if query.strip() else xapian.Query.MatchAll
+        if tags:
+            filter = xapian.Query(xapian.Query.OP_AND, [self.TAG_PREFIX + tag for tag in tags])
+            filter = xapian.Query(xapian.Query.OP_SCALE_WEIGHT, filter, 0)
+        else: 
+            filter = xapian.Query.MatchAll
+        enquire.set_query(xapian.Query(xapian.Query.OP_AND, filter, query))
         mset = enquire.get_mset(0, self._index.get_doccount())
         for match in mset:
             xapian_document = match.document

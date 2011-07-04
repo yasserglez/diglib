@@ -8,7 +8,8 @@ import unittest
 from diglib.core import DigitalLibrary
 from diglib.core.index import XapianIndex
 from diglib.core.database import SQLAlchemyDatabase
-from diglib.core import DocumentNotFound, ExactDuplicateError, SimilarDuplicateError, NotRetrievableError
+from diglib.core import DocumentNotFound, ExactDuplicateError, \
+                        SimilarDuplicateError, NotRetrievableError
 
 
 class TestDigitalLibrary(unittest.TestCase):
@@ -110,6 +111,36 @@ class TestDigitalLibrary(unittest.TestCase):
         self._library.update_tags(document.hash_md5, set('abc'))
         self.assertListEqual(self._library.search('', set('abc')), [document.hash_md5])
 
+    def test_search_empty(self):
+        self.assertListEqual(self._library.search('foo bar', set()), [])
+        self.assertListEqual(self._library.search('foo bar', set(['veda'])), [])
+        self.test_add_txt()
+        self.test_add_pdf()
+        self.assertListEqual(self._library.search('foo bar', set()), [])
+        self.assertListEqual(self._library.search('foo bar', set(['veda'])), [])
+
+    def test_search_all(self):
+        self.assertListEqual(self._library.search('', set()), [])
+        txt_document = self.test_add_txt()
+        self.assertListEqual(self._library.search('', set()), [txt_document.hash_md5])
+        pdf_document = self.test_add_pdf()
+        results = self._library.search('', set())
+        self.assertSetEqual(set(results), set([txt_document.hash_md5,
+                                               pdf_document.hash_md5]))
+
+    def test_search_simple(self):
+        txt_document = self.test_add_txt()
+        pdf_document = self.test_add_pdf()
+        results = self._library.search('+VEDA evolutionary optimization', set())
+        self.assertListEqual(results, [pdf_document.hash_md5, txt_document.hash_md5])
+
+    def test_search_filtered(self):
+        txt_document = self.test_add_txt()
+        pdf_document = self.test_add_pdf()
+        results = self._library.search('+VEDA evolutionary optimization', 
+                                       set(['vine', 'copula', 'veda']))
+        self.assertListEqual(results, [txt_document.hash_md5])
+
     def _assert_documents_equal(self, x, y):
         self.assertEqual(x.hash_md5, y.hash_md5)
         self.assertEqual(x.hash_ssdeep, y.hash_ssdeep)
@@ -119,7 +150,7 @@ class TestDigitalLibrary(unittest.TestCase):
         self.assertEqual(x.thumbnail_path, y.thumbnail_path)
         self.assertEqual(x.language_code, y.language_code)
         self.assertSetEqual(x.tags, y.tags)
-
+        
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
