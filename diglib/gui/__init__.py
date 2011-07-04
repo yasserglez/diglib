@@ -11,7 +11,8 @@ class GUI(object):
 
     def __init__(self, library):
         super(GUI, self).__init__()
-#        gtk.window_set_default_icon_from_file('diglib.svg')
+        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'diglib.svg')
+        gtk.window_set_default_icon_from_file(icon_path)
         self._main_window = MainWindow(library)
 
     def start(self):

@@ -150,7 +150,7 @@ class TestDigitalLibrary(unittest.TestCase):
         self.assertEqual(x.thumbnail_path, y.thumbnail_path)
         self.assertEqual(x.language_code, y.language_code)
         self.assertSetEqual(x.tags, y.tags)
-        
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

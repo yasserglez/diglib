@@ -16,4 +16,4 @@ class XMLWidget(object):
         self._builder.connect_signals(self)
 
     def __getattr__(self, name):
-        return getattr(self._widget, name)  
+        return getattr(self._widget, name)
