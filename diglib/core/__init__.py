@@ -38,6 +38,53 @@ class NotRetrievableError(DocumentError):
     pass
 
 
+class Document(object):
+    
+    def __init__(self, hash_md5, hash_ssdeep, mime_type, document_path, 
+                 document_size, thumbnail_path, language_code, tags):
+        self.hash_md5 = hash_md5
+        self.hash_ssdeep = hash_ssdeep
+        self.mime_type = mime_type
+        self._documents_dir = None # Set by DigitalLibrary.
+        self._document_path = document_path
+        self.document_size = document_size
+        self._thumbnails_dir = None # Set by DigitalLibrary.
+        self._thumbnail_path = thumbnail_path
+        self.language_code = language_code
+        self.tags = tags
+
+    def set_documents_dir(self, documents_dir):
+        self._documents_dir = documents_dir
+
+    def set_thumbnails_dir(self, thumbnails_dir):
+        self._thumbnails_dir = thumbnails_dir
+
+    @property
+    def document_abspath(self):
+        return os.path.join(self._documents_dir, self._document_path)
+
+    @property
+    def small_thumbnail_abspath(self):
+        if self._thumbnail_path:
+            return os.path.join(self._thumbnails_dir, 'small', self._thumbnail_path)
+        else:
+            return None
+
+    @property
+    def normal_thumbnail_abspath(self):
+        if self._thumbnail_path:
+            return os.path.join(self._thumbnails_dir, 'normal', self._thumbnail_path)
+        else:
+            return None            
+
+    @property
+    def large_thumbnail_abspath(self):
+        if self._thumbnail_path:
+            return os.path.join(self._thumbnails_dir, 'large', self._thumbnail_path)
+        else:
+            return None        
+
+
 class DigitalLibrary(object):
     
     MIME_TYPES = {
@@ -59,11 +106,12 @@ class DigitalLibrary(object):
 
     def get(self, hash_md5):
         document = self._database.get(hash_md5)
-        if document is None:
+        if document:
+            document.set_documents_dir(self._documents_dir)
+            document.set_thumbnails_dir(self._thumbnails_dir)
+            return document
+        else:
             raise DocumentNotFound()
-        document_abspath = os.path.join(self._documents_dir, document.document_path)
-        document.document_path = document_abspath
-        return document
 
     def add(self, document_path, tags):
         tags = set([self._normalize_tag(tag) for tag in tags])
@@ -96,19 +144,19 @@ class DigitalLibrary(object):
         # Add the document to the database and the index.
         content = handler.get_content()
         language_code = get_lang(content)
-        document = self._database.create(hash_md5, hash_ssdeep, mime_type, content,
-                                         document_path, document_size, thumbnail_path,
-                                         language_code, tags)
-        self._index.add(document, handler.get_metadata())
+        document = self._database.create(hash_md5, hash_ssdeep, mime_type, document_path,
+                                         document_size, thumbnail_path, language_code, tags)
+        document.set_documents_dir(self._documents_dir)
+        document.set_thumbnails_dir(self._thumbnails_dir)
+        self._index.add(document, content, handler.get_metadata())
         # Check if the document can be retrieved with the available information.
         try:
             self._check_retrievable(document)
         except NotRetrievableError:
             self.delete(document.hash_md5)
             raise # Propagate the exception.
-        document.document_path = document_abspath 
         return document
-    
+
     def get_tags(self):
         return self._database.get_tags()
 
@@ -136,12 +184,15 @@ class DigitalLibrary(object):
 
     def delete(self, hash_md5):
         document = self._database.get(hash_md5)
-        os.remove(os.path.join(self._documents_dir, document.document_path))
-        if document.thumbnail_path:
-            for size_name in self._thumbnail_sizes.iterkeys():
-                thumbnail_abspath = os.path.join(self._thumbnails_dir, size_name, document.thumbnail_path)
-                if os.path.isfile(thumbnail_abspath):
-                    os.remove(thumbnail_abspath)
+        document.set_documents_dir(self._documents_dir)
+        document.set_thumbnails_dir(self._thumbnails_dir)
+        os.remove(document.document_abspath)
+        if document.small_thumbnail_abspath:
+            os.remove(document.small_thumbnail_abspath)
+        if document.normal_thumbnail_abspath:
+            os.remove(document.normal_thumbnail_abspath)
+        if document.large_thumbnail_abspath:
+            os.remove(document.large_thumbnail_abspath)
         self._database.delete(hash_md5)
         self._index.delete(hash_md5)
 

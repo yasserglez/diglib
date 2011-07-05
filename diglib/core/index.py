@@ -10,7 +10,7 @@ class Index(object):
     def __init__(self, index_dir):
         pass 
 
-    def add(self, document, metadata):
+    def add(self, document, content, metadata):
         raise NotImplementedError()
 
     # Check if the document can be retrieved with the available information.
@@ -54,15 +54,15 @@ class XapianIndex(Index):
                 stopper.add(stopword)
             self._stoppers[lang] = stopper
 
-    def add(self, document, metadata):
+    def add(self, document, content, metadata):
         generator = xapian.TermGenerator()
         if metadata:
             generator.index_text_without_positions(metadata, 1, self.METADATA_PREFIX)
         # Index the content of the document.
         generator.set_stemmer(xapian.Stem(document.language_code))
         generator.set_stopper(self._stoppers[document.language_code])
-        if document.content:
-            generator.index_text(document.content, 1, self.CONTENT_PREFIX)
+        if content:
+            generator.index_text(content, 1, self.CONTENT_PREFIX)
         xapian_document = generator.get_document()
         for tag in document.tags:
             xapian_document.add_boolean_term(self.TAG_PREFIX + tag)

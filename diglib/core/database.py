@@ -4,20 +4,7 @@ from sqlalchemy import create_engine, Table, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
 
-
-class Document(object):
-
-    def __init__(self, hash_md5, hash_ssdeep, mime_type, content, document_path, 
-                 document_size, thumbnail_path, language_code, tags):
-        self.hash_md5 = hash_md5
-        self.hash_ssdeep = hash_ssdeep
-        self.mime_type = mime_type
-        self.content = content
-        self.document_path = document_path
-        self.document_size = document_size
-        self.thumbnail_path = thumbnail_path
-        self.language_code = language_code
-        self.tags = tags
+from diglib.core import Document
 
 
 class Database(object):
@@ -26,7 +13,7 @@ class Database(object):
         pass
 
     # Add the document to the database and return an instance of the Document class.
-    def create(self, hash_md5, hash_ssdeep, mime_type, content, document_path, 
+    def create(self, hash_md5, hash_ssdeep, mime_type, document_path, 
                document_size, thumbnail_path, language_code, tags):
         raise NotImplementedError()
 
@@ -116,30 +103,32 @@ class SQLAlchemyDatabase(Database):
         SQLAlchemyBase.metadata.create_all(engine)
         self._sessionmaker = sessionmaker(engine)
 
-    def create(self, hash_md5, hash_ssdeep, mime_type, content, document_path,
+    def create(self, hash_md5, hash_ssdeep, mime_type, document_path,
                document_size, thumbnail_path, language_code, tags):
         session = self._sessionmaker()
         tags =  self._normalize_tags(session, tags)
         doc = SQLAlchemyDocument(hash_md5, hash_ssdeep, mime_type, document_path,
                                  document_size, thumbnail_path, language_code, tags)
         session.add(doc)
-        document = Document(hash_md5, hash_ssdeep, mime_type, content,
-                            document_path, document_size, thumbnail_path,
-                            language_code, set([tag.name for tag in tags]))
+        document = Document(hash_md5, hash_ssdeep, mime_type, document_path, 
+                            document_size, thumbnail_path, language_code, 
+                            set([tag.name for tag in tags]))
         session.commit()
         session.close()
         return document
 
     def get(self, hash_md5):
-        document = None
         session = self._sessionmaker()
         query = session.query(SQLAlchemyDocument).filter_by(hash_md5=hash_md5)
         if query.count():
             doc = query.first()
             document = Document(doc.hash_md5, doc.hash_ssdeep, doc.mime_type, 
-                                None, doc.document_path, doc.document_size, 
+                                doc.document_path, doc.document_size, 
                                 doc.thumbnail_path, doc.language_code, 
                                 set([tag.name for tag in doc.tags]))
+        else:
+            # Document not found.
+            document = None
         session.close()
         return document
 
@@ -218,7 +207,7 @@ class SQLAlchemyDatabase(Database):
         documents = []
         for doc in query.all():
             document = Document(doc.hash_md5, doc.hash_ssdeep, doc.mime_type, 
-                                None, doc.document_path, doc.document_size, 
+                                doc.document_path, doc.document_size, 
                                 doc.thumbnail_path, doc.language_code, 
                                 set([tag.name for tag in doc.tags]))
             documents.append(document)
