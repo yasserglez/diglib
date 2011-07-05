@@ -111,6 +111,15 @@ class TestDigitalLibrary(unittest.TestCase):
         self._library.update_tags(document.hash_md5, set('abc'))
         self.assertListEqual(self._library.search('', set('abc')), [document.hash_md5])
 
+    def test_tag_frequency(self):
+        self.test_add_txt()
+        self.test_add_pdf()
+        self._library.add_tag('a')
+        self.assertEqual(self._library.get_tag_frequency('a'), 0.0)
+        self.assertEqual(self._library.get_tag_frequency('vine'), 0.5)
+        self.assertEqual(self._library.get_tag_frequency('copula'), 0.5)
+        self.assertEqual(self._library.get_tag_frequency('veda'), 1.0)
+
     def test_search_empty(self):
         self.assertListEqual(self._library.search('foo bar', set()), [])
         self.assertListEqual(self._library.search('foo bar', set(['veda'])), [])

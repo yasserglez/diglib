@@ -126,6 +126,9 @@ class DigitalLibrary(object):
         tags = set([self._normalize_tag(tag) for tag in tags])
         self._index.update_tags(hash_md5, tags)
         self._database.update_tags(hash_md5, tags)
+        
+    def get_tag_frequency(self, tag):
+        return self._database.get_tag_frequency(tag)
 
     def search(self, query, tags):
         tags = set([self._normalize_tag(tag) for tag in tags])

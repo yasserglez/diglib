@@ -51,6 +51,9 @@ class Database(object):
 
     def update_tags(self, hash_md5, tags):
         raise NotImplementedError()
+    
+    def get_tag_frequency(self, tag):
+        raise NotImplementedError()
 
     # Get documents which size is between the given values.
     def get_similar_documents(self, lower_size, upper_size):
@@ -195,6 +198,14 @@ class SQLAlchemyDatabase(Database):
             doc.tags = tags
             session.commit()
         session.close()
+
+    def get_tag_frequency(self, tag):
+        session = self._sessionmaker()
+        total_docs = session.query(SQLAlchemyDocument).count()
+        query = session.query(SQLAlchemyTag).filter_by(name=tag)
+        sqlalchemy_tag = query.scalar()
+        tag_docs = len(sqlalchemy_tag.documents) if sqlalchemy_tag else 0
+        return float(tag_docs) / float(total_docs)
 
     def get_similar_documents(self, lower_size, upper_size):
         session = self._sessionmaker()
