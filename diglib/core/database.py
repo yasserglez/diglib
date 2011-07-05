@@ -202,10 +202,13 @@ class SQLAlchemyDatabase(Database):
     def get_tag_frequency(self, tag):
         session = self._sessionmaker()
         total_docs = session.query(SQLAlchemyDocument).count()
-        query = session.query(SQLAlchemyTag).filter_by(name=tag)
-        sqlalchemy_tag = query.scalar()
-        tag_docs = len(sqlalchemy_tag.documents) if sqlalchemy_tag else 0
-        return float(tag_docs) / float(total_docs)
+        if total_docs:
+            query = session.query(SQLAlchemyTag).filter_by(name=tag)
+            sqlalchemy_tag = query.scalar()
+            tag_docs = len(sqlalchemy_tag.documents) if sqlalchemy_tag else 0
+            return tag_docs / float(total_docs)
+        else:
+            return 0.0
 
     def get_similar_documents(self, lower_size, upper_size):
         session = self._sessionmaker()
