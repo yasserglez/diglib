@@ -7,7 +7,7 @@ from diglib.gui import GUI
 
 
 NAME = 'Digital Library'
-DESCRIPTION = 'Manage a collection of digital documents.'
+DESCRIPTION = 'Digital document management software.'
 AUTHOR = 'Yasser González-Fernández <ygonzalezfernandez@gmail.com>'
 COPYRIGHT = 'Copyright © 2011 Yasser González-Fernández'
 VERSION = '0.1.0'

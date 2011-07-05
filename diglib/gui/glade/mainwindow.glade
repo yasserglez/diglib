@@ -25,12 +25,13 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <object class="GtkMenuItem" id="importdoc_menuitem">
+                      <object class="GtkMenuItem" id="importfile_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Import _File...</property>
                         <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_importfile" swapped="no"/>
                       </object>
                     </child>
                     <child>
@@ -40,6 +41,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Import _Directory...</property>
                         <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_importdir" swapped="no"/>
                       </object>
                     </child>
                     <child>
@@ -50,14 +52,14 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="quit_menuitem">
-                        <property name="label">gtk-quit</property>
+                      <object class="GtkImageMenuItem" id="close_menuitem">
+                        <property name="label">gtk-close</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_quit_menuitem_activate" swapped="no"/>
+                        <signal name="activate" handler="on_close_menuitem_activate" swapped="no"/>
                       </object>
                     </child>
                   </object>
@@ -137,12 +139,13 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <object class="GtkMenuItem" id="newtag_menuitem">
+                      <object class="GtkMenuItem" id="addtag_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_Add</property>
                         <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_addtag" swapped="no"/>
                       </object>
                     </child>
                     <child>
@@ -152,6 +155,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_Rename</property>
                         <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_renametag" swapped="no"/>
                       </object>
                     </child>
                     <child>
@@ -161,6 +165,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_Delete</property>
                         <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_deletetag" swapped="no"/>
                       </object>
                     </child>
                   </object>
@@ -185,6 +190,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_Open</property>
                         <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_opendoc" swapped="no"/>
                       </object>
                     </child>
                     <child>
@@ -194,15 +200,17 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_Copy</property>
                         <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_copydoc" swapped="no"/>
                       </object>
                     </child>
                     <child>
-                      <object class="GtkMenuItem" id="deldoc_menuitem">
+                      <object class="GtkMenuItem" id="deletedoc_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_Delete</property>
                         <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_deletedoc" swapped="no"/>
                       </object>
                     </child>
                     <child>
@@ -215,12 +223,13 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkMenuItem" id="docprop_menuitem">
+                      <object class="GtkMenuItem" id="docproperties_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_Properties</property>
                         <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_docproperties" swapped="no"/>
                       </object>
                     </child>
                   </object>
@@ -261,40 +270,193 @@
           </packing>
         </child>
         <child>
-          <object class="GtkHBox" id="toolbar_hbox">
+          <object class="GtkToolbar" id="toolbar">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="show_arrow">False</property>
             <child>
-              <object class="GtkToolbar" id="toolbar">
+              <object class="GtkToolButton" id="importfile_toolbutton">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkEntry" id="search_entry">
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="invisible_char">•</property>
-                <property name="primary_icon_activatable">False</property>
-                <property name="secondary_icon_activatable">False</property>
-                <property name="primary_icon_sensitive">True</property>
-                <property name="secondary_icon_sensitive">True</property>
+                <property name="use_action_appearance">False</property>
+                <property name="label" translatable="yes">Import File</property>
+                <property name="use_underline">True</property>
+                <property name="stock_id">diglib-document-add</property>
+                <signal name="clicked" handler="on_importfile" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="position">1</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="importdir_toolbutton">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="use_action_appearance">False</property>
+                <property name="label" translatable="yes">Import Directory</property>
+                <property name="use_underline">True</property>
+                <property name="stock_id">diglib-directory-add</property>
+                <signal name="clicked" handler="on_importdir" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkSeparatorToolItem" id="separator3">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="use_action_appearance">False</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolItem" id="iconsize_toolitem">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="use_action_appearance">False</property>
+                <child>
+                  <placeholder/>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkSeparatorToolItem" id="separator4">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="use_action_appearance">False</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="addtag_toolbutton">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="use_action_appearance">False</property>
+                <property name="label" translatable="yes">Add Tag</property>
+                <property name="use_underline">True</property>
+                <property name="stock_id">diglib-tag-add</property>
+                <signal name="clicked" handler="on_addtag" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="deletetag_toolbutton">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="use_action_appearance">False</property>
+                <property name="label" translatable="yes">Delete Tag</property>
+                <property name="use_underline">True</property>
+                <property name="stock_id">diglib-tag-delete</property>
+                <signal name="clicked" handler="on_deletetag" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkSeparatorToolItem" id="separator6">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="use_action_appearance">False</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="opendoc_toolbutton">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="use_action_appearance">False</property>
+                <property name="label" translatable="yes">Open Document</property>
+                <property name="use_underline">True</property>
+                <property name="stock_id">diglib-document-open</property>
+                <signal name="clicked" handler="on_opendoc" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="copydoc_toolbutton">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="use_action_appearance">False</property>
+                <property name="label" translatable="yes">Copy Document</property>
+                <property name="use_underline">True</property>
+                <property name="stock_id">diglib-document-copy</property>
+                <signal name="clicked" handler="on_copydoc" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="deletedoc_toolbutton">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="use_action_appearance">False</property>
+                <property name="label" translatable="yes">Delete Document</property>
+                <property name="use_underline">True</property>
+                <property name="stock_id">diglib-document-delete</property>
+                <signal name="clicked" handler="on_deletedoc" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolItem" id="pad_toolitem">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="use_action_appearance">False</property>
+                <child>
+                  <placeholder/>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolItem" id="search_toolitem">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="use_action_appearance">False</property>
+                <child>
+                  <placeholder/>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
               </packing>
             </child>
           </object>
           <packing>
             <property name="expand">False</property>
-            <property name="fill">False</property>
+            <property name="fill">True</property>
+            <property name="padding">4</property>
             <property name="position">1</property>
           </packing>
         </child>
@@ -306,7 +468,19 @@
               <placeholder/>
             </child>
             <child>
-              <placeholder/>
+              <object class="GtkScrolledWindow" id="scrolledwindow">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="hscrollbar_policy">automatic</property>
+                <property name="vscrollbar_policy">automatic</property>
+                <child>
+                  <placeholder/>
+                </child>
+              </object>
+              <packing>
+                <property name="resize">True</property>
+                <property name="shrink">True</property>
+              </packing>
             </child>
           </object>
           <packing>

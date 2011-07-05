@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import os
-
 import gtk
 
 import diglib
-import diglib.util
+from diglib.gui.util import get_icon
+from diglib.util import open_url, open_email
 
 
 class AboutDialog(gtk.AboutDialog):
@@ -13,12 +12,11 @@ class AboutDialog(gtk.AboutDialog):
     def __init__(self):
         super(AboutDialog, self).__init__()
         self.set_position(gtk.WIN_POS_CENTER)
-        url_hook = lambda dialog, url, data: diglib.util.open_url(url)
+        url_hook = lambda dialog, url, data: open_url(url)
         gtk.about_dialog_set_url_hook(url_hook, None)
-        email_hook = lambda dialog, email, data: diglib.util.open_email(email)
+        email_hook = lambda dialog, email, data: open_email(email)
         gtk.about_dialog_set_email_hook(email_hook, None)
-        logo_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'diglib.svg')
-        self.set_logo(gtk.gdk.pixbuf_new_from_file(logo_file))
+        self.set_logo(gtk.gdk.pixbuf_new_from_file(get_icon('diglib.svg')))
         self.set_name(diglib.NAME)
         self.set_program_name(diglib.NAME)
         self.set_version(diglib.VERSION)
