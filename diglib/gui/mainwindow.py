@@ -191,11 +191,11 @@ class MainWindow(XMLWidget):
         doc_ids = tuple(self._iter_selected_docs())
         num_docs = len(doc_ids)
         if num_docs > 0:
-            message = 'Are you sure you want to delete\nthe %s?' % \
+            message = 'Delete the %s?' % \
                 (('%s selected documents' % num_docs) if num_docs > 1
                  else 'selected document')
-            dialog = gtk.MessageDialog(self._widget, gtk.DIALOG_MODAL, 
-                                       gtk.MESSAGE_WARNING, gtk.BUTTONS_YES_NO, 
+            dialog = gtk.MessageDialog(self._widget, gtk.DIALOG_MODAL,
+                                       gtk.MESSAGE_WARNING, gtk.BUTTONS_YES_NO,
                                        message)
             dialog.format_secondary_text('The %s will be permanently lost.' %
                                          ('documents' if num_docs > 1 else 'document'))
