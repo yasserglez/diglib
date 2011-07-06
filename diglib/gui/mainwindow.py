@@ -6,6 +6,7 @@ import gtk
 import pango
 
 import diglib
+from diglib.util import open_file
 from diglib.gui.util import get_icon
 from diglib.gui.xmlwidget import XMLWidget
 from diglib.gui.aboutdialog import AboutDialog
@@ -85,7 +86,7 @@ class MainWindow(XMLWidget):
     def _init_docs_iconview(self):
         docs_iconview = self._builder.get_object('docs_iconview')
         # Column type.
-        self.DOCS_COLUMN_HASH = 0
+        self.DOCS_COLUMN_ID = 0
         self.DOCS_COLUMN_ICON = 1
         self._docs_liststore = gtk.ListStore(str, gtk.gdk.Pixbuf)
         docs_iconview.set_model(self._docs_liststore)
@@ -138,12 +139,12 @@ class MainWindow(XMLWidget):
 
     def _update_docs_iconview(self):
         self._docs_liststore.clear()
-        for md5_hash in self._library.search(self._query, self._tags):
-            doc = self._library.get(md5_hash)
+        for doc_id in self._library.search(self._query, self._tags):
+            doc = self._library.get(doc_id)
             if doc.normal_thumbnail_abspath:
-                pixbuf = gtk.gdk.pixbuf_new_from_file(doc.normal_thumbnail_abspath)
+                pixbuf = gtk.gdk.pixbuf_new_from_file(doc.large_thumbnail_abspath)
             else:
-                pixbuf = self._doc_icon_normal
+                pixbuf = self._doc_icon_large
             self._docs_liststore.append([doc.hash_md5, pixbuf])
         self._update_statusbar()
 
@@ -167,6 +168,43 @@ class MainWindow(XMLWidget):
             row1_tag = model.get_value(iter1, self.TAGS_COLUMN_TAG)
             row2_tag = model.get_value(iter2, self.TAGS_COLUMN_TAG)
             return cmp(row1_tag, row2_tag)
+        
+    def _iter_selected_docs(self):
+        docs_iconview = self._builder.get_object('docs_iconview')
+        paths = docs_iconview.get_selected_items()
+        for path in paths:
+            iter = self._docs_liststore.get_iter(path)
+            doc_id = self._docs_liststore.get_value(iter, self.DOCS_COLUMN_ID)
+            yield doc_id
+
+    def on_open_docs(self, *args):
+        for doc_id in self._iter_selected_docs():
+            doc = self._library.get(doc_id)
+            open_file(doc.document_abspath)
+
+    def on_copy_docs(self, *args):
+        for doc_id in self._iter_selected_docs():
+            doc = self._library.get(doc_id)
+            print doc.document_abspath
+
+    def on_delete_docs(self, *args):
+        doc_ids = tuple(self._iter_selected_docs())
+        num_docs = len(doc_ids)
+        if num_docs > 0:
+            message = 'Are you sure you want to delete\nthe %s?' % \
+                (('%s selected documents' % num_docs) if num_docs > 1
+                 else 'selected document')
+            dialog = gtk.MessageDialog(self._widget, gtk.DIALOG_MODAL, 
+                                       gtk.MESSAGE_WARNING, gtk.BUTTONS_YES_NO, 
+                                       message)
+            dialog.format_secondary_text('The %s will be permanently lost.' %
+                                         ('documents' if num_docs > 1 else 'document'))
+            response = dialog.run()
+            dialog.destroy()
+            if response == gtk.RESPONSE_YES:
+                for doc_id in doc_ids:
+                    self._library.delete(doc_id)
+                self._update_all()
 
     def on_main_window_destroy(self, widget):
         gtk.main_quit()
@@ -197,15 +235,6 @@ class MainWindow(XMLWidget):
 
     def on_deletetag(self, widget):
         print 'deletetag'
-
-    def on_opendoc(self, widget):
-        print 'opendoc'
-
-    def on_copydoc(self, widget):
-        print 'copydoc'
-
-    def on_deletedoc(self, widget):
-        print 'deletedoc'
 
     def on_docproperties(self, widget):
         print 'docproperties'

@@ -76,7 +76,7 @@ class SQLAlchemyDocument(SQLAlchemyBase):
     document_size = Column(Integer, nullable=False)
     thumbnail_path = Column(String)
     language_code = Column(String, nullable=False)
-    tags = relationship(SQLAlchemyTag, secondary='document_tags', backref='documents', cascade='all')
+    tags = relationship(SQLAlchemyTag, secondary='document_tags', backref='documents')
 
     def __init__(self, hash_md5, hash_ssdeep, mime_type, document_path, 
                  document_size, thumbnail_path, language_code, tags):

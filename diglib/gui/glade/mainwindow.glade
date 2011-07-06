@@ -184,33 +184,33 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <object class="GtkMenuItem" id="opendoc_menuitem">
+                      <object class="GtkMenuItem" id="opendocs_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_Open</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_opendoc" swapped="no"/>
+                        <signal name="activate" handler="on_open_docs" swapped="no"/>
                       </object>
                     </child>
                     <child>
-                      <object class="GtkMenuItem" id="copydoc_menuitem">
+                      <object class="GtkMenuItem" id="copydocs_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_Copy</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_copydoc" swapped="no"/>
+                        <signal name="activate" handler="on_copy_docs" swapped="no"/>
                       </object>
                     </child>
                     <child>
-                      <object class="GtkMenuItem" id="deletedoc_menuitem">
+                      <object class="GtkMenuItem" id="deletedocs_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_Delete</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_deletedoc" swapped="no"/>
+                        <signal name="activate" handler="on_delete_docs" swapped="no"/>
                       </object>
                     </child>
                     <child>
@@ -382,14 +382,15 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolButton" id="opendoc_toolbutton">
+              <object class="GtkToolButton" id="opendocs_toolbutton">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Open Documents</property>
                 <property name="use_action_appearance">False</property>
-                <property name="label" translatable="yes">Open Document</property>
+                <property name="label" translatable="yes">Open Documents</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">diglib-document-open</property>
-                <signal name="clicked" handler="on_opendoc" swapped="no"/>
+                <signal name="clicked" handler="on_open_docs" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -397,14 +398,15 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolButton" id="copydoc_toolbutton">
+              <object class="GtkToolButton" id="copydocs_toolbutton">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Copy Documents</property>
                 <property name="use_action_appearance">False</property>
-                <property name="label" translatable="yes">Copy Document</property>
+                <property name="label" translatable="yes">Copy Documents</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">diglib-document-copy</property>
-                <signal name="clicked" handler="on_copydoc" swapped="no"/>
+                <signal name="clicked" handler="on_copy_docs" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -412,14 +414,15 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolButton" id="deletedoc_toolbutton">
+              <object class="GtkToolButton" id="deletedocs_toolbutton">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Delete Documents</property>
                 <property name="use_action_appearance">False</property>
-                <property name="label" translatable="yes">Delete Document</property>
+                <property name="label" translatable="yes">Delete Documents</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">diglib-document-delete</property>
-                <signal name="clicked" handler="on_deletedoc" swapped="no"/>
+                <signal name="clicked" handler="on_delete_docs" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -496,6 +499,7 @@
                   <object class="GtkIconView" id="docs_iconview">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <signal name="item-activated" handler="on_open_docs" swapped="no"/>
                   </object>
                 </child>
               </object>
