@@ -91,7 +91,11 @@ class DigitalLibrary(object):
         'text/plain': '.txt',
         'application/pdf': '.pdf'
     }
-
+    
+    SMALL_THUMBNAIL_SIZE = 64
+    NORMAL_THUMBNAIL_SIZE = 128
+    LARGE_THUMBNAIL_SIZE = 256
+    
     def __init__(self, library_dir, index_class, database_class):
         super(DigitalLibrary, self).__init__()
         if not os.path.isdir(library_dir):
@@ -100,10 +104,9 @@ class DigitalLibrary(object):
         self._database = database_class(os.path.join(library_dir, 'database.db'))
         self._documents_dir = os.path.join(library_dir, 'documents')
         self._thumbnails_dir = os.path.join(library_dir, 'thumbnails')
-        self._thumbnail_sizes = {'small' : 64, 'normal' : 128, 'large' : 256}
         self._magic = magic.open(magic.MAGIC_MIME_TYPE | magic.MAGIC_NO_CHECK_TOKENS)
         self._magic.load()
-
+        
     def get(self, hash_md5):
         document = self._database.get(hash_md5)
         if document:
@@ -133,7 +136,9 @@ class DigitalLibrary(object):
         # Generate the thumbnails.
         thumbnail_path = None
         handler = get_handler(document_abspath, mime_type)
-        for size_name, size in self._thumbnail_sizes.iteritems():
+        for size_name, size in (('small', self.SMALL_THUMBNAIL_SIZE),
+                                ('normal', self.NORMAL_THUMBNAIL_SIZE),
+                                ('large', self.LARGE_THUMBNAIL_SIZE)):    
             thumbnail_data = handler.get_thumbnail(size, size)
             if thumbnail_data:
                 thumbnail_path = os.path.join(*path) + '.png'

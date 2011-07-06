@@ -88,6 +88,19 @@ class MainWindow(XMLWidget):
         docs_iconview.set_model(self._docs_liststore)
         docs_iconview.set_pixbuf_column(self.DOCS_COLUMN_ICON)
         docs_iconview.set_selection_mode(gtk.SELECTION_MULTIPLE)
+        # Default document icons.
+        self._doc_icon_small = \
+            gtk.gdk.pixbuf_new_from_file_at_size(get_icon('diglib-document.svg'),
+                                                 self._library.SMALL_THUMBNAIL_SIZE,
+                                                 self._library.SMALL_THUMBNAIL_SIZE)
+        self._doc_icon_normal = \
+            gtk.gdk.pixbuf_new_from_file_at_size(get_icon('diglib-document.svg'), 
+                                                 self._library.NORMAL_THUMBNAIL_SIZE,
+                                                 self._library.NORMAL_THUMBNAIL_SIZE)
+        self._doc_icon_large = \
+            gtk.gdk.pixbuf_new_from_file_at_size(get_icon('diglib-document.svg'), 
+                                                 self._library.LARGE_THUMBNAIL_SIZE, 
+                                                 self._library.LARGE_THUMBNAIL_SIZE)
 
     def _update_all(self):
         self._update_tags_treeview()
@@ -101,7 +114,7 @@ class MainWindow(XMLWidget):
         # Add one row for each tag.
         default_size = self._widget.get_style().font_desc.get_size()
         # Smallest and largest font sizes.
-        s = 0.5 * default_size
+        s = 0.75 * default_size
         S = 1.5 * default_size
         tags = self._library.get_tags()
         tag_freqs = [self._library.get_tag_frequency(tag) for tag in tags]
@@ -124,13 +137,13 @@ class MainWindow(XMLWidget):
         self._docs_liststore.clear()
         for md5_hash in self._library.search(self._query, self._tags):
             doc = self._library.get(md5_hash)
-            thumbnail = doc.small_thumbnail_abspath
-            if not thumbnail:
-                thumbnail = get_icon('diglib-directory-add.svg')
-            pixbuf = gtk.gdk.pixbuf_new_from_file(thumbnail)
+            if doc.normal_thumbnail_abspath:
+                pixbuf = gtk.gdk.pixbuf_new_from_file(doc.small_thumbnail_abspath)
+            else:
+                pixbuf = self._doc_icon_small
             self._docs_liststore.append([doc.hash_md5, pixbuf])
         self._update_statusbar()
-        
+
     def _update_statusbar(self):
         pass
 
