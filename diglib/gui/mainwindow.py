@@ -5,6 +5,7 @@ import math
 import gtk
 import pango
 
+import diglib
 from diglib.gui.util import get_icon
 from diglib.gui.xmlwidget import XMLWidget
 from diglib.gui.aboutdialog import AboutDialog
@@ -19,6 +20,8 @@ class MainWindow(XMLWidget):
         self._search_timeout = 1000 # Miliseconds.
         self._tags = set()
         self._query = ''
+        self._widget.set_title(diglib.NAME)
+        self._widget.set_default_size(800, 600)
         # Initialize child widgets.
         self._init_toolbar()
         self._init_tags_treeview()
@@ -138,9 +141,9 @@ class MainWindow(XMLWidget):
         for md5_hash in self._library.search(self._query, self._tags):
             doc = self._library.get(md5_hash)
             if doc.normal_thumbnail_abspath:
-                pixbuf = gtk.gdk.pixbuf_new_from_file(doc.small_thumbnail_abspath)
+                pixbuf = gtk.gdk.pixbuf_new_from_file(doc.normal_thumbnail_abspath)
             else:
-                pixbuf = self._doc_icon_small
+                pixbuf = self._doc_icon_normal
             self._docs_liststore.append([doc.hash_md5, pixbuf])
         self._update_statusbar()
 
