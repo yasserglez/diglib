@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import math
+import urllib
 
 import gtk
 import pango
@@ -168,7 +169,7 @@ class MainWindow(XMLWidget):
             row1_tag = model.get_value(iter1, self.TAGS_COLUMN_TAG)
             row2_tag = model.get_value(iter2, self.TAGS_COLUMN_TAG)
             return cmp(row1_tag, row2_tag)
-        
+
     def _iter_selected_docs(self):
         docs_iconview = self._builder.get_object('docs_iconview')
         paths = docs_iconview.get_selected_items()
@@ -183,9 +184,16 @@ class MainWindow(XMLWidget):
             open_file(doc.document_abspath)
 
     def on_copy_docs(self, *args):
-        for doc_id in self._iter_selected_docs():
-            doc = self._library.get(doc_id)
-            print doc.document_abspath
+        abspaths = [self._library.get(doc_id).document_abspath
+                    for doc_id in self._iter_selected_docs()]
+        if abspaths:
+            def get_func(clipboard, selectiondata, info, data):
+                uris = ['file://%s' % urllib.quote(path) for path in abspaths]
+                text = 'copy\n%s' % "\n".join(uris)
+                selectiondata.set(selectiondata.get_target(), 8, text)
+            clipboard = gtk.clipboard_get()
+            targets = [('x-special/gnome-copied-files', 0, 0)]
+            clipboard.set_with_data(targets, get_func, lambda clipboard, data: None)
 
     def on_delete_docs(self, *args):
         doc_ids = tuple(self._iter_selected_docs())
