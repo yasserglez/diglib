@@ -63,12 +63,13 @@ class MainWindow(XMLWidget):
         self._tags_liststore = gtk.ListStore(int, str, pango.FontDescription)
         tags_treeview.set_model(self._tags_liststore)
         renderer = gtk.CellRendererText()
+        renderer.connect('edited', self.on_tag_cellrenderer_edited)
         renderer.set_property('xalign', 0.5)
         column = gtk.TreeViewColumn(None, renderer)
         column.add_attribute(renderer, 'text', self.TAGS_COLUMN_TAG)
         column.add_attribute(renderer, 'font_desc', self.TAGS_COLUMN_FONT)
         # Function to disable edition of the "special" tags.
-        f = lambda column, renderer, model, iter: renderer.set_property('editable',  model.get_value(iter, self.TAGS_COLUMN_TYPE) == self.TAGS_ROW_TAG)
+        f = lambda column, renderer, model, iter: renderer.set_property('editable', model.get_value(iter, self.TAGS_COLUMN_TYPE) == self.TAGS_ROW_TAG)
         column.set_cell_data_func(renderer, f)
         tags_treeview.append_column(column)
         # Function to draw the separator.
@@ -228,8 +229,9 @@ class MainWindow(XMLWidget):
             message = 'Delete the %s?' % \
                 (('%s selected tags' % selected_count)
                  if selected_count > 1 else 'selected tag')
-            secondary_text = 'The documents associated with the %s will not be removed.' % \
-                ('tags' if selected_count > 1 else 'tag')
+            secondary_text = \
+                'The documents associated with the %s will not be removed.' % \
+                    ('tags' if selected_count > 1 else 'tag')
             dialog = gtk.MessageDialog(self._widget, gtk.DIALOG_MODAL,
                                        gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO,
                                        message)
@@ -256,16 +258,22 @@ class MainWindow(XMLWidget):
                 if update:
                     self._update_all()
 
-    def on_main_window_destroy(self, widget):
-        gtk.main_quit()
-
-    def on_close_menuitem_activate(self, widget):
+    def on_close_menuitem_activate(self, menuitem):
         self.destroy()
 
-    def on_about_menuitem_activate(self, widget):
+    def on_about_menuitem_activate(self, menuitem):
         dialog = AboutDialog()
         dialog.run()
         dialog.destroy()
+
+    def on_main_window_destroy(self, widget):
+        gtk.main_quit()
+
+    def on_tag_cellrenderer_edited(self, renderer, path, new_name):
+        iter = self._tags_liststore.get_iter(path)
+        old_name = self._tags_liststore.get_value(iter, self.TAGS_COLUMN_TAG)
+        self._library.rename_tag(old_name, new_name)
+        self._update_tags_treeview()
 
     def on_search_entry_activate_timeout(self, widget):
         self._query = widget.get_text()
@@ -279,9 +287,6 @@ class MainWindow(XMLWidget):
 
     def on_addtag(self, widget):
         print 'addtag'
-
-    def on_renametag(self, widget):
-        print 'renametag'
 
     def on_tags_selection_changed(self, *args):
         self._tags.clear()
