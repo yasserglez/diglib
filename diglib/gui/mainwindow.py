@@ -12,6 +12,7 @@ from diglib.gui.util import get_icon
 from diglib.gui.xmlwidget import XMLWidget
 from diglib.gui.aboutdialog import AboutDialog
 from diglib.gui.searchentry import SearchEntry
+from diglib.core import NotRetrievableError
 
 
 class MainWindow(XMLWidget):
@@ -113,15 +114,15 @@ class MainWindow(XMLWidget):
         # Smallest and largest font sizes.
         s = 0.75 * default_size
         S = 1.5 * default_size
-        tags = self._library.get_tags()
-        tag_freqs = [self._library.get_tag_frequency(tag) for tag in tags]
+        tags = self._library.get_all_tags()
+        tag_freqs = [self._library.get_tag_freq(tag) for tag in tags]
         # Minimum and maximum frequencies.
         f = math.log1p(min(tag_freqs))
         F = math.log1p(max(tag_freqs))
         for tag in tags:
             font_desc = pango.FontDescription()
-            if f != F:
-                t = math.log1p(self._library.get_tag_frequency(tag)) # Tag frequency.
+            if F > f:
+                t = math.log1p(self._library.get_tag_freq(tag)) # Tag frequency.
                 font_size = int(s + (S - s) * ((t - f) / (F - f)))
                 font_desc.set_size(font_size)
             self._tags_liststore.append([self.TAGS_ROW_TAG, tag, font_desc])
@@ -133,7 +134,7 @@ class MainWindow(XMLWidget):
     def _update_docs_iconview(self):
         self._docs_liststore.clear()
         for doc_id in self._library.search(self._query, self._tags):
-            doc = self._library.get(doc_id)
+            doc = self._library.get_doc(doc_id)
             if doc.normal_thumbnail_abspath:
                 pixbuf = gtk.gdk.pixbuf_new_from_file(doc.large_thumbnail_abspath)
             else:
@@ -169,14 +170,27 @@ class MainWindow(XMLWidget):
             iter = self._docs_liststore.get_iter(path)
             doc_id = self._docs_liststore.get_value(iter, self.DOCS_COLUMN_ID)
             yield doc_id
+            
+    def _iter_selected_tags(self):
+        tags_treeview = self._builder.get_object('tags_treeview')
+        selection = tags_treeview.get_selection()
+        tags_liststore, paths =  selection.get_selected_rows()
+        for path in paths:
+            iter = tags_liststore.get_iter(path)
+            type = tags_liststore.get_value(iter, self.TAGS_COLUMN_TYPE)
+            if type == self.TAGS_ROW_ALL:
+                break
+            elif type == self.TAGS_ROW_TAG:
+                tag = tags_liststore.get_value(iter, self.TAGS_COLUMN_TAG)
+                yield tag
 
     def on_open_docs(self, *args):
         for doc_id in self._iter_selected_docs():
-            doc = self._library.get(doc_id)
+            doc = self._library.get_doc(doc_id)
             open_file(doc.document_abspath)
 
     def on_copy_docs(self, *args):
-        abspaths = [self._library.get(doc_id).document_abspath
+        abspaths = [self._library.get_doc(doc_id).document_abspath 
                     for doc_id in self._iter_selected_docs()]
         if abspaths:
             def get_func(clipboard, selectiondata, info, data):
@@ -188,23 +202,59 @@ class MainWindow(XMLWidget):
             clipboard.set_with_data(targets, get_func, lambda clipboard, data: None)
 
     def on_delete_docs(self, *args):
-        doc_ids = tuple(self._iter_selected_docs())
-        num_docs = len(doc_ids)
-        if num_docs > 0:
+        selected = list(self._iter_selected_docs())
+        selected_count = len(selected)
+        if selected_count > 0:
             message = 'Delete the %s?' % \
-                (('%s selected documents' % num_docs) if num_docs > 1
-                 else 'selected document')
-            dialog = gtk.MessageDialog(self._widget, gtk.DIALOG_MODAL,
-                                       gtk.MESSAGE_WARNING, gtk.BUTTONS_YES_NO,
+                (('%s selected documents' % selected_count)
+                 if selected_count > 1 else 'selected document')
+            secondary_text = 'The %s will be permanently lost.' % \
+                ('documents' if selected_count > 1 else 'document')
+            dialog = gtk.MessageDialog(self._widget, gtk.DIALOG_MODAL, 
+                                       gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO,
                                        message)
-            dialog.format_secondary_text('The %s will be permanently lost.' %
-                                         ('documents' if num_docs > 1 else 'document'))
+            dialog.format_secondary_text(secondary_text)
             response = dialog.run()
             dialog.destroy()
             if response == gtk.RESPONSE_YES:
-                for doc_id in doc_ids:
-                    self._library.delete(doc_id)
+                for hash_md5 in selected:
+                    self._library.delete_doc(hash_md5)
                 self._update_all()
+
+    def on_delete_tags(self, *args):
+        selected = list(self._iter_selected_tags())
+        selected_count = len(selected)
+        if selected_count > 0:
+            message = 'Delete the %s?' % \
+                (('%s selected tags' % selected_count)
+                 if selected_count > 1 else 'selected tag')
+            secondary_text = 'The documents associated with the %s will not be removed.' % \
+                ('tags' if selected_count > 1 else 'tag')
+            dialog = gtk.MessageDialog(self._widget, gtk.DIALOG_MODAL,
+                                       gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO,
+                                       message)
+            dialog.format_secondary_text(secondary_text)
+            response = dialog.run()
+            dialog.destroy()
+            if response == gtk.RESPONSE_YES:
+                update = False
+                for tag in selected:
+                    try:
+                        self._library.delete_tag(tag)
+                        update = True
+                    except NotRetrievableError:
+                        message = 'Could not delete the tag "%s".' % tag
+                        secondary_text = 'If the tag is deleted at least ' \
+                            'one document could not be retrieved.'
+                        dialog = gtk.MessageDialog(self._widget, gtk.DIALOG_MODAL,
+                                                   gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                                   message)
+                        dialog.format_secondary_text(secondary_text)
+                        response = dialog.run()
+                        dialog.destroy()
+                        break
+                if update:
+                    self._update_all()
 
     def on_main_window_destroy(self, widget):
         gtk.main_quit()
@@ -233,21 +283,11 @@ class MainWindow(XMLWidget):
     def on_renametag(self, widget):
         print 'renametag'
 
-    def on_deletetag(self, widget):
-        print 'deletetag'
-
-    def on_docproperties(self, widget):
-        print 'docproperties'
-
-    def on_tags_selection_changed(self, selection):
-        model, paths =  selection.get_selected_rows()
+    def on_tags_selection_changed(self, *args):
         self._tags.clear()
-        for path in paths:
-            iter = model.get_iter(path)
-            type = model.get_value(iter, self.TAGS_COLUMN_TYPE)
-            if type == self.TAGS_ROW_ALL:
-                break
-            elif type == self.TAGS_ROW_TAG:
-                tag = model.get_value(iter, self.TAGS_COLUMN_TAG)
-                self._tags.add(tag)
+        for tag in self._iter_selected_tags():
+            self._tags.add(tag)
         self._update_docs_iconview()
+
+    def on_doc_properties(self, *args):
+        pass

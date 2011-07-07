@@ -159,13 +159,13 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkMenuItem" id="deletetag_menuitem">
+                      <object class="GtkMenuItem" id="deletetags_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_Delete</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_deletetag" swapped="no"/>
+                        <signal name="activate" handler="on_delete_tags" swapped="no"/>
                       </object>
                     </child>
                   </object>
@@ -229,7 +229,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_Properties</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_docproperties" swapped="no"/>
+                        <signal name="activate" handler="on_doc_properties" swapped="no"/>
                       </object>
                     </child>
                   </object>
@@ -356,14 +356,14 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolButton" id="deletetag_toolbutton">
+              <object class="GtkToolButton" id="deletetags_toolbutton">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="use_action_appearance">False</property>
                 <property name="label" translatable="yes">Delete Tag</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">diglib-tag-delete</property>
-                <signal name="clicked" handler="on_deletetag" swapped="no"/>
+                <signal name="clicked" handler="on_delete_tags" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
