@@ -19,7 +19,7 @@ class MainWindow(XMLWidget):
     def __init__(self, library):
         super(MainWindow, self).__init__('main_window')
         self._library = library
-        self._search_timeout = 1000 # Miliseconds.
+        self._search_timeout = 1000 # msecs.
         self._tags = set()
         self._query = ''
         self._widget.set_title(diglib.NAME)
@@ -94,18 +94,10 @@ class MainWindow(XMLWidget):
         docs_iconview.set_pixbuf_column(self.DOCS_COLUMN_ICON)
         docs_iconview.set_selection_mode(gtk.SELECTION_MULTIPLE)
         # Default document icons.
-        self._doc_icon_small = \
-            gtk.gdk.pixbuf_new_from_file_at_size(get_icon('diglib-document.svg'),
-                                                 self._library.SMALL_THUMBNAIL_SIZE,
-                                                 self._library.SMALL_THUMBNAIL_SIZE)
-        self._doc_icon_normal = \
-            gtk.gdk.pixbuf_new_from_file_at_size(get_icon('diglib-document.svg'), 
-                                                 self._library.NORMAL_THUMBNAIL_SIZE,
-                                                 self._library.NORMAL_THUMBNAIL_SIZE)
-        self._doc_icon_large = \
-            gtk.gdk.pixbuf_new_from_file_at_size(get_icon('diglib-document.svg'), 
-                                                 self._library.LARGE_THUMBNAIL_SIZE, 
-                                                 self._library.LARGE_THUMBNAIL_SIZE)
+        doc_icon = get_icon('diglib-document.svg')
+        self._doc_icon_small = gtk.gdk.pixbuf_new_from_file_at_size(doc_icon, self._library.SMALL_THUMBNAIL_SIZE, self._library.SMALL_THUMBNAIL_SIZE)
+        self._doc_icon_normal = gtk.gdk.pixbuf_new_from_file_at_size(doc_icon, self._library.NORMAL_THUMBNAIL_SIZE, self._library.NORMAL_THUMBNAIL_SIZE)
+        self._doc_icon_large = gtk.gdk.pixbuf_new_from_file_at_size(doc_icon, self._library.LARGE_THUMBNAIL_SIZE, self._library.LARGE_THUMBNAIL_SIZE)
 
     def _update_all(self):
         self._update_tags_treeview()

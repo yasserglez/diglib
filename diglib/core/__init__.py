@@ -126,7 +126,7 @@ class DigitalLibrary(object):
         hash_ssdeep = ssdeep.hash(document_data)
         self._check_duplicated(document_size, hash_md5, hash_ssdeep)
         # Copy the document into the library directory.
-        path = map(lambda i: hash_md5[i-4:i], [4, 8, 12, 16, 20, 24, 28, 32])
+        path = map(lambda i: hash_md5[i-2:i], range(2, 32, 2))
         mime_type = self._magic.buffer(document_data)
         document_path = os.path.join(*path) + self.MIME_TYPES[mime_type]
         document_abspath = os.path.join(self._documents_dir, document_path)
