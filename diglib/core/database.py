@@ -12,45 +12,44 @@ class Database(object):
     def __init__(self, database_file):
         pass
 
-    # Add the document to the database and return an instance of the Document class.
-    def create(self, hash_md5, hash_ssdeep, mime_type, document_path, 
-               document_size, thumbnail_path, language_code, tags):
+    def add_doc(self, doc):
         raise NotImplementedError()
 
-    def get(self, hash_md5):
-        raise NotImplementedError()
-
-    # Check if the document can be retrieved with the available information.
-    def is_retrievable(self, hash_md5):
-        raise NotImplementedError()
-
-    def delete(self, hash_md5):
+    def get_doc(self, hash_md5):
         raise NotImplementedError()
     
-    def get_tags(self):
+    # Get documents whose size is between the given values.
+    def get_similar_docs(self, lower_size, upper_size):
+        raise NotImplementedError()    
+
+    def delete_doc(self, hash_md5):
         raise NotImplementedError()
-    
+
     def add_tag(self, tag):
+        raise NotImplementedError()    
+
+    # Get all tags in the database.
+    def get_all_tags(self):
         raise NotImplementedError()
+
+    # Get the frequency of a tag.
+    def get_tag_freq(self, tag):
+        raise NotImplementedError()      
 
     def rename_tag(self, old_name, new_name):
         raise NotImplementedError()
-
+    
     def update_tags(self, hash_md5, tags):
         raise NotImplementedError()
-    
-    def get_tag_frequency(self, tag):
-        raise NotImplementedError()
 
-    # Get documents which size is between the given values.
-    def get_similar_documents(self, lower_size, upper_size):
-        raise NotImplementedError()
+    def delete_tag(self, tag):
+        raise NotImplementedError()    
 
     def close(self):
         raise NotImplementedError()
 
 
-# Implementation of a SQLAchemy-managed SQLite database.
+# Implementation of a SQLite database managed by SQLAchemy.
 
 SQLAlchemyBase = declarative_base()
 
@@ -96,99 +95,82 @@ document_tags = Table('document_tags', SQLAlchemyBase.metadata,
 
 
 class SQLAlchemyDatabase(Database):
-
+    
     def __init__(self, database_file):
         super(SQLAlchemyDatabase, self).__init__(database_file)
         engine = create_engine('sqlite:///%s' % database_file)
         SQLAlchemyBase.metadata.create_all(engine)
         self._sessionmaker = sessionmaker(engine)
 
-    def create(self, hash_md5, hash_ssdeep, mime_type, document_path,
-               document_size, thumbnail_path, language_code, tags):
+    def add_doc(self, doc):
         session = self._sessionmaker()
-        tags =  self._normalize_tags(session, tags)
-        doc = SQLAlchemyDocument(hash_md5, hash_ssdeep, mime_type, document_path,
-                                 document_size, thumbnail_path, language_code, tags)
-        session.add(doc)
-        document = Document(hash_md5, hash_ssdeep, mime_type, document_path, 
-                            document_size, thumbnail_path, language_code, 
-                            set([tag.name for tag in tags]))
+        sqlalchemy_tags =  self._normalize_tags(session, doc.tags)
+        sqlalchemy_doc = \
+            SQLAlchemyDocument(doc.hash_md5, doc.hash_ssdeep, doc.mime_type,
+                               doc.document_path, doc.document_size,
+                               doc.thumbnail_path, doc.language_code,
+                               sqlalchemy_tags)
+        session.add(sqlalchemy_doc)
         session.commit()
         session.close()
-        return document
 
-    def get(self, hash_md5):
+    def get_doc(self, hash_md5):
         session = self._sessionmaker()
         query = session.query(SQLAlchemyDocument).filter_by(hash_md5=hash_md5)
         if query.count():
-            doc = query.first()
-            document = Document(doc.hash_md5, doc.hash_ssdeep, doc.mime_type, 
-                                doc.document_path, doc.document_size, 
-                                doc.thumbnail_path, doc.language_code, 
-                                set([tag.name for tag in doc.tags]))
+            sqlalchemy_doc = query.first()
+            tags = set([tag.name for tag in sqlalchemy_doc.tags])
+            doc = Document(sqlalchemy_doc.hash_md5, sqlalchemy_doc.hash_ssdeep,
+                           sqlalchemy_doc.mime_type, sqlalchemy_doc.document_path,
+                           sqlalchemy_doc.document_size, sqlalchemy_doc.thumbnail_path,
+                           sqlalchemy_doc.language_code, tags)
         else:
-            # Document not found.
-            document = None
+            doc = None # Document not found.
         session.close()
-        return document
+        return doc
 
-    def is_retrievable(self, hash_md5):
+    def get_similar_docs(self, lower_size, upper_size):
+        docs = []
         session = self._sessionmaker()
-        query = session.query(SQLAlchemyDocument).filter_by(hash_md5=hash_md5)
-        doc = query.first()
-        retrievable = len(doc.tags) >= 3
+        query = session.query(SQLAlchemyDocument) \
+            .filter(SQLAlchemyDocument.document_size >= lower_size) \
+            .filter(SQLAlchemyDocument.document_size <= upper_size)
+        for sqlalchemy_doc in query.all():
+            tags = set([tag.name for tag in sqlalchemy_doc.tags])
+            doc = Document(sqlalchemy_doc.hash_md5, sqlalchemy_doc.hash_ssdeep,
+                           sqlalchemy_doc.mime_type, sqlalchemy_doc.document_path,
+                           sqlalchemy_doc.document_size, sqlalchemy_doc.thumbnail_path,
+                           sqlalchemy_doc.language_code, tags)
+            docs.append(doc)
         session.close()
-        return retrievable
-    
-    def delete(self, hash_md5):
+        return docs
+
+    def delete_doc(self, hash_md5):
         session = self._sessionmaker()
         query = session.query(SQLAlchemyDocument).filter_by(hash_md5=hash_md5)
         if query.count():
-            doc = query.first()
-            session.delete(doc)
+            sqlalchemy_doc = query.first()
+            session.delete(sqlalchemy_doc)
             session.commit()
         session.close()
+        
+    def add_tag(self, tag):
+        session = self._sessionmaker()
+        sqlalchemy_tag = SQLAlchemyTag(tag)
+        session.add(sqlalchemy_tag)
+        session.commit()
+        session.close()        
 
-    def get_tags(self):
+    def get_all_tags(self):
         tags = set()
         session = self._sessionmaker()
         query = session.query(SQLAlchemyTag)
-        for tag in query.all():
-            tags.add(tag.name)
+        for sqlalchemy_tag in query.all():
+            tags.add(sqlalchemy_tag.name)
         session.close()
         return tags
-
-    def add_tag(self, tag):
-        session = self._sessionmaker()
-        tag = SQLAlchemyTag(tag)
-        session.add(tag)
-        session.commit()
-        session.close()
-
-    def rename_tag(self, old_name, new_name):
-        session = self._sessionmaker()
-        query = session.query(SQLAlchemyTag).filter_by(name=old_name)
-        if query.count():
-            tag = query.first()
-            tag.name = new_name
-            session.commit()
-        else:
-            tag = SQLAlchemyTag(tag)
-            session.add(tag)
-            session.commit()
-        session.close()
-
-    def update_tags(self, hash_md5, tags):
-        session = self._sessionmaker()
-        query = session.query(SQLAlchemyDocument).filter_by(hash_md5=hash_md5)
-        if query.count():
-            doc = query.first()
-            tags = self._normalize_tags(session, tags)
-            doc.tags = tags
-            session.commit()
-        session.close()
-
-    def get_tag_frequency(self, tag):
+        
+    def get_tag_freq(self, tag):
         session = self._sessionmaker()
         total_docs = session.query(SQLAlchemyDocument).count()
         if total_docs:
@@ -197,34 +179,55 @@ class SQLAlchemyDatabase(Database):
             tag_docs = len(sqlalchemy_tag.documents) if sqlalchemy_tag else 0
             return tag_docs / float(total_docs)
         else:
-            return 0.0
+            return 0.0     
 
-    def get_similar_documents(self, lower_size, upper_size):
+    def rename_tag(self, old_name, new_name):
         session = self._sessionmaker()
-        query = session.query(SQLAlchemyDocument) \
-            .filter(SQLAlchemyDocument.document_size >= lower_size) \
-            .filter(SQLAlchemyDocument.document_size <= upper_size)
-        documents = []
-        for doc in query.all():
-            document = Document(doc.hash_md5, doc.hash_ssdeep, doc.mime_type, 
-                                doc.document_path, doc.document_size, 
-                                doc.thumbnail_path, doc.language_code, 
-                                set([tag.name for tag in doc.tags]))
-            documents.append(document)
+        query = session.query(SQLAlchemyTag).filter_by(name=old_name)
+        if query.count():
+            sqlalchemy_tag = query.first()
+            sqlalchemy_tag.name = new_name
+            session.commit()
+        else:
+            sqlalchemy_tag = SQLAlchemyTag(sqlalchemy_tag)
+            session.add(sqlalchemy_tag)
+            session.commit()
         session.close()
-        return documents
+
+    def update_tags(self, hash_md5, tags):
+        session = self._sessionmaker()
+        query = session.query(SQLAlchemyDocument).filter_by(hash_md5=hash_md5)
+        if query.count():
+            sqlalchemy_doc = query.first()
+            sqlalchemy_tags = self._normalize_tags(session, tags)
+            sqlalchemy_doc.tags = sqlalchemy_tags
+            session.commit()
+        session.close()
+
+    def delete_tag(self, tag):
+        session = self._sessionmaker()
+        sqlalchemy_tag = self._normalize_tag(session, tag)
+        session.delete(sqlalchemy_tag)
+        session.commit()
+        session.close()
 
     def close(self):
         self._sessionmaker.close_all()
+        
+    # Return a SQLAlchemyTag corresponding to the given tag name.
+    # The tag is added if it does not exists in the database. 
+    def _normalize_tag(self, session, tag):
+        query = session.query(SQLAlchemyTag).filter_by(name=tag)
+        sqlalchemy_tag = query.scalar()
+        if not sqlalchemy_tag: # Tag does not exists.
+            sqlalchemy_tag = SQLAlchemyTag(tag)
+            session.add(sqlalchemy_tag)
+            session.commit()
+        return sqlalchemy_tag
 
     def _normalize_tags(self, session, tags):
         sqlalchemy_tags = []
         for tag in tags:
-            query = session.query(SQLAlchemyTag).filter_by(name=tag)
-            sqlalchemy_tag = query.scalar()
-            if not sqlalchemy_tag:
-                sqlalchemy_tag = SQLAlchemyTag(tag)
-                session.add(sqlalchemy_tag)
-                session.commit()
+            sqlalchemy_tag = self._normalize_tag(session, tag)
             sqlalchemy_tags.append(sqlalchemy_tag)
         return sqlalchemy_tags

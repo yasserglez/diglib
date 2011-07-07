@@ -10,25 +10,28 @@ class Index(object):
     def __init__(self, index_dir):
         pass 
 
-    def add(self, document, content, metadata):
+    def add_doc(self, doc, content, metadata):
         raise NotImplementedError()
 
-    # Check if the document can be retrieved with the available information.
-    def is_retrievable(self, hash_md5):
+    # Get the number of terms of a document.
+    def get_doc_terms_count(self, hash_md5):
         raise NotImplementedError()
+    
+    def delete_doc(self, hash_md5):
+        raise NotImplementedError()    
 
     def rename_tag(self, old_name, new_name):
-        raise NotImplementedError()    
+        raise NotImplementedError()
 
     def update_tags(self, hash_md5, tags):
         raise NotImplementedError()
 
-    def delete(self, hash_md5):
+    def delete_tag(self, tag):
         raise NotImplementedError()
-
+    
     # Get the MD5 hashes of the documents with the given tags that match the query. 
     def search(self, query, tags):
-        raise NotImplementedError()
+        raise NotImplementedError()    
 
     def close(self):
         raise NotImplementedError()
@@ -54,27 +57,29 @@ class XapianIndex(Index):
                 stopper.add(stopword)
             self._stoppers[lang] = stopper
 
-    def add(self, document, content, metadata):
+    def add_doc(self, doc, content, metadata):
         generator = xapian.TermGenerator()
-        if metadata:
-            generator.index_text_without_positions(metadata, 1, self.METADATA_PREFIX)
+        generator.index_text_without_positions(metadata, 1, self.METADATA_PREFIX)
         # Index the content of the document.
-        generator.set_stemmer(xapian.Stem(document.language_code))
-        generator.set_stopper(self._stoppers[document.language_code])
-        if content:
-            generator.index_text(content, 1, self.CONTENT_PREFIX)
-        xapian_document = generator.get_document()
-        for tag in document.tags:
-            xapian_document.add_boolean_term(self.TAG_PREFIX + tag)
-        xapian_document.add_boolean_term(self.ID_PREFIX + document.hash_md5)
-        xapian_document.set_data(document.hash_md5)
-        self._index.add_document(xapian_document)
+        generator.set_stemmer(xapian.Stem(doc.language_code))
+        generator.set_stopper(self._stoppers[doc.language_code])
+        generator.index_text(content, 1, self.CONTENT_PREFIX)
+        xapian_doc = generator.get_document()
+        for tag in doc.tags:
+            xapian_doc.add_boolean_term(self.TAG_PREFIX + tag)
+        xapian_doc.add_boolean_term(self.ID_PREFIX + doc.hash_md5)
+        xapian_doc.set_data(doc.hash_md5)
+        self._index.add_document(xapian_doc)
         self._index.flush()
 
-    def is_retrievable(self, hash_md5):
-        xapian_document = self._get_xapian_document(hash_md5)
-        num_terms = xapian_document.termlist_count()
-        return num_terms >= 100
+    def get_doc_terms_count(self, hash_md5):
+        xapian_doc = self._get_xapian_doc(hash_md5)
+        terms_count = xapian_doc.termlist_count()
+        return terms_count
+    
+    def delete_doc(self, hash_md5):
+        self._index.delete_document(self.ID_PREFIX + hash_md5)
+        self._index.flush()
 
     def rename_tag(self, old_name, new_name):
         old_term = self.TAG_PREFIX + old_name
@@ -84,27 +89,35 @@ class XapianIndex(Index):
             enquire.set_query(xapian.Query(old_term))
             mset = enquire.get_mset(0, self._index.get_doccount())
             for match in mset:
-                xapian_document = match.document
-                xapian_document.remove_term(old_term)
-                xapian_document.add_boolean_term(new_term)
-                self._index.replace_document(xapian_document.get_docid(), xapian_document)
-
-    def update_tags(self, hash_md5, tags):
-        xapian_document = self._get_xapian_document(hash_md5)
-        for term in xapian_document:
-            if term.term.startswith(self.TAG_PREFIX):
-                xapian_document.remove_term(term.term)
-        for tag in tags:
-            xapian_document.add_boolean_term(self.TAG_PREFIX + tag)                
-        self._index.replace_document(xapian_document.get_docid(), xapian_document)
+                xapian_doc = match.document
+                xapian_doc.remove_term(old_term)
+                xapian_doc.add_boolean_term(new_term)
+                self._index.replace_document(xapian_doc.get_docid(), xapian_doc)
         self._index.flush()
 
-    def delete(self, hash_md5):
-        self._index.delete_document(self.ID_PREFIX + hash_md5)
+    def update_tags(self, hash_md5, tags):
+        xapian_doc = self._get_xapian_doc(hash_md5)
+        for term in xapian_doc:
+            if term.term.startswith(self.TAG_PREFIX):
+                xapian_doc.remove_term(term.term)
+        for tag in tags:
+            xapian_doc.add_boolean_term(self.TAG_PREFIX + tag)
+        self._index.replace_document(xapian_doc.get_docid(), xapian_doc)
+        self._index.flush()
+
+    def delete_tag(self, tag):
+        term = self.TAG_PREFIX + tag
+        enquire = xapian.Enquire(self._index)
+        enquire.set_query(xapian.Query(term))
+        mset = enquire.get_mset(0, self._index.get_doccount())
+        for match in mset:
+            xapian_doc = match.document
+            xapian_doc.remove_term(term)
+            self._index.replace_document(xapian_doc.get_docid(), xapian_doc)
         self._index.flush()
 
     def search(self, query, tags):
-        results = []
+        docs = []
         enquire = xapian.Enquire(self._index)
         query = self._parse_query(query) if query.strip() else xapian.Query.MatchAll
         if tags:
@@ -115,19 +128,19 @@ class XapianIndex(Index):
         enquire.set_query(xapian.Query(xapian.Query.OP_AND, filter, query))
         mset = enquire.get_mset(0, self._index.get_doccount())
         for match in mset:
-            xapian_document = match.document
-            results.append(xapian_document.get_data())
-        return results
+            xapian_doc = match.document
+            docs.append(xapian_doc.get_data())
+        return docs    
 
     def close(self):
         self._index.flush()
 
-    def _get_xapian_document(self, hash_md5):
+    def _get_xapian_doc(self, hash_md5):
         enquire = xapian.Enquire(self._index)
         enquire.set_query(xapian.Query(self.ID_PREFIX + hash_md5))
         mset = enquire.get_mset(0, 1)
-        document = self._index.get_document(mset[0].docid)
-        return document
+        xapian_doc = self._index.get_document(mset[0].docid)
+        return xapian_doc
 
     def _parse_query(self, query):
         parser = xapian.QueryParser()
