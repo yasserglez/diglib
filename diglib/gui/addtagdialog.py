@@ -5,8 +5,8 @@ import gtk
 
 class AddTagDialog(gtk.Dialog):
     
-    def __init__(self):
-        super(AddTagDialog, self).__init__()
+    def __init__(self, parent):
+        super(AddTagDialog, self).__init__(parent=parent)
         self.set_title('Add Tag')
         self.set_has_separator(False)
         self.set_modal(True)
@@ -24,7 +24,7 @@ class AddTagDialog(gtk.Dialog):
         content_area.pack_end(hbox)
         hbox.show_all()
         self.connect('response', self.on_response)
-        self.add_button('Close', gtk.RESPONSE_CANCEL)
+        self.add_button('Close', gtk.RESPONSE_CLOSE)
         self.add_button('Add', gtk.RESPONSE_ACCEPT)
         self.set_default_response(gtk.RESPONSE_ACCEPT)
 

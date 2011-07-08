@@ -6,13 +6,14 @@ import urllib
 import gtk
 import pango
 
-from diglib.gui.xmlwidget import XMLWidget
+from diglib.core import NotRetrievableError
 from diglib.util import open_file
-from diglib.gui.util import get_icon
+from diglib.gui.util import get_image
+from diglib.gui.xmlwidget import XMLWidget
+from diglib.gui.searchentry import SearchEntry
 from diglib.gui.aboutdialog import AboutDialog
 from diglib.gui.addtagdialog import AddTagDialog
-from diglib.gui.searchentry import SearchEntry
-from diglib.core import NotRetrievableError
+from diglib.gui.docpropdialog import DocumentPropertiesDialog
 
 
 class MainWindow(XMLWidget):
@@ -178,10 +179,11 @@ class MainWindow(XMLWidget):
                         dialog.destroy()
                         break
                 if update:
-                    self._update_all()
+                    self._update_tags_treeview()
+                    self._update_docs_iconview()
 
     def on_add_tag(self, *args):
-        dialog = AddTagDialog()
+        dialog = AddTagDialog(self._widget)
         response = dialog.run()
         dialog.destroy()
         if response == gtk.RESPONSE_ACCEPT and dialog.tag:
@@ -249,7 +251,13 @@ class MainWindow(XMLWidget):
         self._update_docs_iconview()
 
     def on_doc_properties(self, *args):
-        pass
+        selected = list(self._iter_selected_docs())
+        selected_count = len(selected)
+        if selected_count > 0:
+            doc = self._library.get_doc(selected[0])
+            dialog = DocumentPropertiesDialog(self._widget, doc)
+            dialog.run()
+            dialog.destroy()
 
     def _init_docs_iconview(self):
         docs_iconview = self._builder.get_object('docs_iconview')
@@ -265,7 +273,7 @@ class MainWindow(XMLWidget):
         docs_iconview.set_selection_mode(gtk.SELECTION_MULTIPLE)
         self._doc_icons_size = self.DOC_ICONS_NORMAL
         # Default document icons.
-        doc_icon = get_icon('diglib-document.svg')
+        doc_icon = get_image('diglib-document.svg')
         self._doc_icon_small = gtk.gdk.pixbuf_new_from_file_at_size(doc_icon, self._library.THUMBNAIL_SIZE_SMALL, self._library.THUMBNAIL_SIZE_SMALL)
         self._doc_icon_normal = gtk.gdk.pixbuf_new_from_file_at_size(doc_icon, self._library.THUMBNAIL_SIZE_NORMAL, self._library.THUMBNAIL_SIZE_NORMAL)
         self._doc_icon_large = gtk.gdk.pixbuf_new_from_file_at_size(doc_icon, self._library.THUMBNAIL_SIZE_LARGE, self._library.THUMBNAIL_SIZE_LARGE)

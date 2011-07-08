@@ -3,7 +3,7 @@
 import gtk
 
 import diglib
-from diglib.gui.util import get_icon
+from diglib.gui.util import get_image
 from diglib.util import open_url, open_email
 
 
@@ -16,7 +16,7 @@ class AboutDialog(gtk.AboutDialog):
         gtk.about_dialog_set_url_hook(url_hook, None)
         email_hook = lambda dialog, email, data: open_email(email)
         gtk.about_dialog_set_email_hook(email_hook, None)
-        self.set_logo(gtk.gdk.pixbuf_new_from_file(get_icon('diglib.svg')))
+        self.set_logo(gtk.gdk.pixbuf_new_from_file(get_image('diglib.svg')))
         self.set_name(diglib.NAME)
         self.set_program_name(diglib.NAME)
         self.set_version(diglib.VERSION)
