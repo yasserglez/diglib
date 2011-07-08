@@ -23,7 +23,7 @@ class MainWindow(XMLWidget):
         self._library = library
         self._search_timeout = 1000 # msecs.
         self._query = ''
-        self._tags = set()
+        self._selected_tags = set()
         # Initialize child widgets.
         self._init_tags_treeview()
         self._init_docs_iconview()
@@ -96,7 +96,7 @@ class MainWindow(XMLWidget):
         # Initialize the selection.
         selection = tags_treeview.get_selection()
         selection.set_mode(gtk.SELECTION_MULTIPLE)
-        selection.connect('changed', self.on_tags_selection_changed)
+        selection.connect('changed', self.on_tags_treeview_selection_changed)
         # Other tree view settings.
         tags_treeview.set_headers_visible(False)
         tags_treeview.set_search_column(self.TAG_COLUMN_TAG)
@@ -244,11 +244,14 @@ class MainWindow(XMLWidget):
         self._query = search_entry.get_text()
         self._update_docs_iconview()
 
-    def on_tags_selection_changed(self, *args):
-        self._tags.clear()
+    def on_tags_treeview_selection_changed(self, *args):
+        self._selected_tags.clear()
         for tag in self._iter_selected_tags():
-            self._tags.add(tag)
+            self._selected_tags.add(tag)
         self._update_docs_iconview()
+        
+    def on_docs_iconview_selection_changed(self, iconview):
+        self._update_statusbar()
 
     def on_doc_properties(self, *args):
         selected = list(self._iter_selected_docs())
@@ -271,6 +274,7 @@ class MainWindow(XMLWidget):
         docs_iconview.set_model(self._docs_liststore)
         docs_iconview.set_pixbuf_column(self.DOC_COLUMN_ICON)
         docs_iconview.set_selection_mode(gtk.SELECTION_MULTIPLE)
+        docs_iconview.connect('selection-changed', self.on_docs_iconview_selection_changed)
         self._doc_icons_size = self.DOC_ICONS_NORMAL
         # Default document icons.
         doc_icon = get_image('diglib-document.svg')
@@ -307,7 +311,7 @@ class MainWindow(XMLWidget):
 
     def _update_docs_iconview(self):
         self._docs_liststore.clear()
-        for doc_id in self._library.search(self._query, self._tags):
+        for doc_id in self._library.search(self._query, self._selected_tags):
             doc = self._library.get_doc(doc_id)
             if doc.normal_thumbnail_abspath:
                 if self._doc_icons_size == self.DOC_ICONS_SMALL:
@@ -327,7 +331,15 @@ class MainWindow(XMLWidget):
         self._update_statusbar()
 
     def _update_statusbar(self):
-        pass
+        statusbar = self._builder.get_object('statusbar')
+        text = ''
+        total_docs = len(self._docs_liststore)
+        if total_docs:
+            text += '%s %s' % (total_docs, 'documents' if total_docs > 1 else 'document')
+            selected_docs = self._count_selected_docs()
+            if selected_docs:
+                text += ' (%s selected)' % selected_docs
+        statusbar.push(0, text)
 
     def _tags_liststore_sort_func(self, model, iter1, iter2):
         # The 'All Documents' special row goes first, then a separator,
@@ -354,6 +366,9 @@ class MainWindow(XMLWidget):
             iter = self._docs_liststore.get_iter(path)
             doc_id = self._docs_liststore.get_value(iter, self.DOC_COLUMN_ID)
             yield doc_id
+            
+    def _count_selected_docs(self):
+        return len(list(self._iter_selected_docs()))
             
     def _iter_selected_tags(self):
         tags_treeview = self._builder.get_object('tags_treeview')
