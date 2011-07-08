@@ -93,9 +93,9 @@ class DigitalLibrary(object):
     }
 
     # Dimensions of the thumbnails of the documents.
-    SMALL_THUMBNAIL_SIZE = 64
-    NORMAL_THUMBNAIL_SIZE = 128
-    LARGE_THUMBNAIL_SIZE = 256
+    THUMBNAIL_SIZE_SMALL = 64
+    THUMBNAIL_SIZE_NORMAL = 128
+    THUMBNAIL_SIZE_LARGE = 256
 
     # Documents whose similarity is equal or greater
     # than this threshold will be considered equals.
@@ -138,9 +138,9 @@ class DigitalLibrary(object):
         # Generate the thumbnails.
         thumbnail_path = None
         handler = get_handler(doc_abspath, mime_type)
-        for size_name, size in (('small', self.SMALL_THUMBNAIL_SIZE),
-                                ('normal', self.NORMAL_THUMBNAIL_SIZE),
-                                ('large', self.LARGE_THUMBNAIL_SIZE)):    
+        for size_name, size in (('small', self.THUMBNAIL_SIZE_SMALL),
+                                ('normal', self.THUMBNAIL_SIZE_NORMAL),
+                                ('large', self.THUMBNAIL_SIZE_LARGE)):    
             thumbnail_data = handler.get_thumbnail(size, size)
             if thumbnail_data:
                 thumbnail_path = os.path.join(*path) + '.png'

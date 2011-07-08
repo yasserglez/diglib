@@ -28,23 +28,23 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <object class="GtkMenuItem" id="importfile_menuitem">
+                      <object class="GtkMenuItem" id="import_file_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Import _File...</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_importfile" swapped="no"/>
+                        <signal name="activate" handler="on_import_file" swapped="no"/>
                       </object>
                     </child>
                     <child>
-                      <object class="GtkMenuItem" id="importdir_menuitem">
+                      <object class="GtkMenuItem" id="import_dir_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Import _Directory...</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_importdir" swapped="no"/>
+                        <signal name="activate" handler="on_import_dir" swapped="no"/>
                       </object>
                     </child>
                     <child>
@@ -81,12 +81,13 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <object class="GtkCheckMenuItem" id="showtags_menuitem">
+                      <object class="GtkCheckMenuItem" id="show_tags_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Show _Tags Pane</property>
                         <property name="use_underline">True</property>
+                        <signal name="toggled" handler="on_show_tags_menuitem_toggled" swapped="no"/>
                       </object>
                     </child>
                     <child>
@@ -97,7 +98,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkRadioMenuItem" id="smallicons_menuitem">
+                      <object class="GtkRadioMenuItem" id="small_icons_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
@@ -107,7 +108,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkRadioMenuItem" id="normalicons_menuitem">
+                      <object class="GtkRadioMenuItem" id="normal_icons_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
@@ -117,7 +118,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkRadioMenuItem" id="largeicons_menuitem">
+                      <object class="GtkRadioMenuItem" id="large_icons_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
@@ -142,7 +143,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <object class="GtkMenuItem" id="addtag_menuitem">
+                      <object class="GtkMenuItem" id="add_tag_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
@@ -152,17 +153,17 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkMenuItem" id="renametag_menuitem">
+                      <object class="GtkMenuItem" id="rename_tag_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_Rename</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_renametag_menuitem_activate" swapped="no"/>
+                        <signal name="activate" handler="on_rename_tag_menuitem_activate" swapped="no"/>
                       </object>
                     </child>
                     <child>
-                      <object class="GtkMenuItem" id="deletetags_menuitem">
+                      <object class="GtkMenuItem" id="delete_tags_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
@@ -187,7 +188,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <object class="GtkMenuItem" id="opendocs_menuitem">
+                      <object class="GtkMenuItem" id="open_docs_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
@@ -197,7 +198,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkMenuItem" id="copydocs_menuitem">
+                      <object class="GtkMenuItem" id="copy_docs_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
@@ -207,7 +208,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkMenuItem" id="deletedocs_menuitem">
+                      <object class="GtkMenuItem" id="delete_docs_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
@@ -217,7 +218,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkMenuItem" id="doctags_menuitem">
+                      <object class="GtkMenuItem" id="doc_tags_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
@@ -226,7 +227,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkMenuItem" id="docproperties_menuitem">
+                      <object class="GtkMenuItem" id="doc_properties_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
@@ -278,15 +279,15 @@
             <property name="can_focus">False</property>
             <property name="show_arrow">False</property>
             <child>
-              <object class="GtkToolButton" id="importfile_toolbutton">
+              <object class="GtkToolButton" id="import_file_toolbutton">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Import File</property>
+                <property name="tooltip_text" translatable="yes">Import file</property>
                 <property name="use_action_appearance">False</property>
                 <property name="label" translatable="yes">Import File</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">diglib-document-add</property>
-                <signal name="clicked" handler="on_importfile" swapped="no"/>
+                <signal name="clicked" handler="on_import_file" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -294,15 +295,15 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolButton" id="importdir_toolbutton">
+              <object class="GtkToolButton" id="import_dir_toolbutton">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Import Directory</property>
+                <property name="tooltip_text" translatable="yes">Import directory</property>
                 <property name="use_action_appearance">False</property>
                 <property name="label" translatable="yes">Import Directory</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">diglib-directory-add</property>
-                <signal name="clicked" handler="on_importdir" swapped="no"/>
+                <signal name="clicked" handler="on_import_dir" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -321,10 +322,10 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolItem" id="iconsize_toolitem">
+              <object class="GtkToolItem" id="icons_size_toolitem">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="tooltip_markup">Icon Size</property>
+                <property name="tooltip_text" translatable="yes">Icons size</property>
                 <property name="use_action_appearance">False</property>
                 <child>
                   <placeholder/>
@@ -347,10 +348,10 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolButton" id="addtag_toolbutton">
+              <object class="GtkToolButton" id="add_tag_toolbutton">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Add Tag</property>
+                <property name="tooltip_text" translatable="yes">Add tag</property>
                 <property name="use_action_appearance">False</property>
                 <property name="label" translatable="yes">Add Tag</property>
                 <property name="use_underline">True</property>
@@ -363,10 +364,10 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolButton" id="deletetags_toolbutton">
+              <object class="GtkToolButton" id="delete_tags_toolbutton">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Delete Tags</property>
+                <property name="tooltip_text" translatable="yes">Delete tags</property>
                 <property name="use_action_appearance">False</property>
                 <property name="label" translatable="yes">Delete Tags</property>
                 <property name="use_underline">True</property>
@@ -390,10 +391,10 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolButton" id="opendocs_toolbutton">
+              <object class="GtkToolButton" id="open_docs_toolbutton">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Open Documents</property>
+                <property name="tooltip_text" translatable="yes">Open documents</property>
                 <property name="use_action_appearance">False</property>
                 <property name="label" translatable="yes">Open Documents</property>
                 <property name="use_underline">True</property>
@@ -406,10 +407,10 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolButton" id="copydocs_toolbutton">
+              <object class="GtkToolButton" id="copy_docs_toolbutton">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Copy Documents</property>
+                <property name="tooltip_text" translatable="yes">Copy documents</property>
                 <property name="use_action_appearance">False</property>
                 <property name="label" translatable="yes">Copy Documents</property>
                 <property name="use_underline">True</property>
@@ -422,10 +423,10 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolButton" id="deletedocs_toolbutton">
+              <object class="GtkToolButton" id="delete_docs_toolbutton">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Delete Documents</property>
+                <property name="tooltip_text" translatable="yes">Delete documents</property>
                 <property name="use_action_appearance">False</property>
                 <property name="label" translatable="yes">Delete Documents</property>
                 <property name="use_underline">True</property>
@@ -454,6 +455,7 @@
               <object class="GtkToolItem" id="search_toolitem">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Search the library</property>
                 <property name="use_action_appearance">False</property>
                 <child>
                   <placeholder/>
