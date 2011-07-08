@@ -6,11 +6,11 @@ import urllib
 import gtk
 import pango
 
-import diglib
+from diglib.gui.xmlwidget import XMLWidget
 from diglib.util import open_file
 from diglib.gui.util import get_icon
-from diglib.gui.xmlwidget import XMLWidget
 from diglib.gui.aboutdialog import AboutDialog
+from diglib.gui.addtagdialog import AddTagDialog
 from diglib.gui.searchentry import SearchEntry
 from diglib.core import NotRetrievableError
 
@@ -23,8 +23,6 @@ class MainWindow(XMLWidget):
         self._search_timeout = 1000 # msecs.
         self._tags = set()
         self._query = ''
-        self._widget.set_title(diglib.NAME)
-        self._widget.set_default_size(800, 600)
         # Initialize child widgets.
         self._init_toolbar()
         self._init_tags_treeview()
@@ -258,6 +256,14 @@ class MainWindow(XMLWidget):
                 if update:
                     self._update_all()
 
+    def on_add_tag(self, *args):
+        dialog = AddTagDialog()
+        response = dialog.run()
+        dialog.destroy()
+        if response == gtk.RESPONSE_ACCEPT and dialog.tag:
+            self._library.add_tag(dialog.tag)
+            self._update_tags_treeview()
+
     def on_close_menuitem_activate(self, menuitem):
         self.destroy()
 
@@ -265,18 +271,31 @@ class MainWindow(XMLWidget):
         dialog = AboutDialog()
         dialog.run()
         dialog.destroy()
+        
+    def on_renametag_menuitem_activate(self, menuitem):
+        tags_treeview = self._builder.get_object('tags_treeview')
+        selection = tags_treeview.get_selection()
+        tags_liststore, paths = selection.get_selected_rows()
+        for path in paths:
+            iter = tags_liststore.get_iter(path)
+            type = tags_liststore.get_value(iter, self.TAGS_COLUMN_TYPE)
+            if type == self.TAGS_ROW_TAG:
+                tags_treeview.set_cursor(path, tags_treeview.get_column(0), True)
+                break
 
     def on_main_window_destroy(self, widget):
         gtk.main_quit()
 
     def on_tag_cellrenderer_edited(self, renderer, path, new_name):
         iter = self._tags_liststore.get_iter(path)
+        new_name = new_name.strip()
         old_name = self._tags_liststore.get_value(iter, self.TAGS_COLUMN_TAG)
-        self._library.rename_tag(old_name, new_name)
-        self._update_tags_treeview()
+        if old_name != new_name:
+            self._library.rename_tag(old_name, new_name)
+            self._update_tags_treeview()
 
-    def on_search_entry_activate_timeout(self, widget):
-        self._query = widget.get_text()
+    def on_search_entry_activate_timeout(self, search_entry):
+        self._query = search_entry.get_text()
         self._update_docs_iconview()
 
     def on_importfile(self, widget):
@@ -284,9 +303,6 @@ class MainWindow(XMLWidget):
 
     def on_importdir(self, widget):
         print 'importdir'
-
-    def on_addtag(self, widget):
-        print 'addtag'
 
     def on_tags_selection_changed(self, *args):
         self._tags.clear()

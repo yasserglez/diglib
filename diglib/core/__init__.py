@@ -194,7 +194,7 @@ class DigitalLibrary(object):
 
     def get_all_tags(self):
         return self._database.get_all_tags()
-    
+
     def get_tag_freq(self, tag):
         return self._database.get_tag_freq(tag)    
 
@@ -247,4 +247,4 @@ class DigitalLibrary(object):
                 self._index.get_doc_terms_count(doc.hash_md5) >= self.MIN_TERMS)
 
     def _normalize_tag(self, tag):
-        return tag.lower()
+        return tag.strip().lower()

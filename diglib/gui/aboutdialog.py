@@ -11,7 +11,7 @@ class AboutDialog(gtk.AboutDialog):
 
     def __init__(self):
         super(AboutDialog, self).__init__()
-        self.set_position(gtk.WIN_POS_CENTER)
+        self.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
         url_hook = lambda dialog, url, data: open_url(url)
         gtk.about_dialog_set_url_hook(url_hook, None)
         email_hook = lambda dialog, email, data: open_email(email)

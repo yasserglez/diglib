@@ -10,7 +10,7 @@ NAME = 'Digital Library'
 DESCRIPTION = 'Digital document management software.'
 AUTHOR = 'Yasser González-Fernández <ygonzalezfernandez@gmail.com>'
 COPYRIGHT = 'Copyright © 2011 Yasser González-Fernández'
-VERSION = '0.1.0'
+VERSION = '1.0.0'
 
 
 def main(library_dir):
