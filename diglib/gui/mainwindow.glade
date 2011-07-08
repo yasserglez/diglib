@@ -489,6 +489,7 @@
                   <object class="GtkTreeView" id="tags_treeview">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <signal name="button-press-event" handler="on_tags_treeview_button_press_event" swapped="no"/>
                   </object>
                 </child>
               </object>
@@ -509,6 +510,7 @@
                   <object class="GtkIconView" id="docs_iconview">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <signal name="button-press-event" handler="on_docs_iconview_button_press_event" swapped="no"/>
                     <signal name="item-activated" handler="on_open_docs" swapped="no"/>
                   </object>
                 </child>

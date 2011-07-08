@@ -229,6 +229,30 @@ class MainWindow(XMLWidget):
                 tags_treeview.set_cursor(path, tags_treeview.get_column(0), True)
                 break
 
+    def on_tags_treeview_button_press_event(self, treeview, event):
+        if event.button == 3: # Right button.
+            path = treeview.get_path_at_pos(int(event.x), int(event.y))
+            if path:
+                path = path[0]
+                selection = treeview.get_selection()
+                if not selection.path_is_selected(path):    
+                    selection.unselect_all()
+                    selection.select_path(path)
+                menu = self._builder.get_object('tags_menu')
+                menu.popup(None, None, None, event.button, event.time)
+                menu.show()                                                
+
+    def on_docs_iconview_button_press_event(self, iconview, event):
+        if event.button == 3: # Right button.
+            path = iconview.get_path_at_pos(int(event.x), int(event.y))
+            if path:
+                if not iconview.path_is_selected(path):
+                    iconview.unselect_all()
+                    iconview.select_path(path)
+                menu = self._builder.get_object('docs_menu')
+                menu.popup(None, None, None, event.button, event.time)
+                menu.show()
+
     def on_main_window_destroy(self, widget):
         gtk.main_quit()
 
