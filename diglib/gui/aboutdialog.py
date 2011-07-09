@@ -3,8 +3,7 @@
 import gtk
 
 import diglib
-from diglib.gui.util import get_image
-from diglib.util import open_url, open_email
+from diglib.gui.util import open_url, open_email, get_image
 
 
 class AboutDialog(gtk.AboutDialog):

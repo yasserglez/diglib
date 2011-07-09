@@ -17,7 +17,7 @@ class AddTagDialog(gtk.Dialog):
         content_area.set_spacing(4)
         hbox = gtk.HBox()
         hbox.set_spacing(8)
-        label = gtk.Label('Tag Name:')
+        label = gtk.Label('Tag:')
         hbox.pack_start(label)
         self.tag_entry = gtk.Entry()
         hbox.pack_start(self.tag_entry)

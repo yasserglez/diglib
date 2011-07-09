@@ -7,13 +7,13 @@ import gtk
 import pango
 
 from diglib.core import NotRetrievableError
-from diglib.util import open_file
-from diglib.gui.util import get_image
+from diglib.gui.util import open_file, get_image
 from diglib.gui.xmlwidget import XMLWidget
 from diglib.gui.searchentry import SearchEntry
 from diglib.gui.aboutdialog import AboutDialog
 from diglib.gui.addtagdialog import AddTagDialog
 from diglib.gui.docpropdialog import DocumentPropertiesDialog
+from diglib.gui.importdocdialog import ImportDocumentDialog
 
 
 class MainWindow(XMLWidget):
@@ -102,7 +102,15 @@ class MainWindow(XMLWidget):
         tags_treeview.set_search_column(self.TAG_COLUMN_TAG)
         
     def on_import_file(self, *args):
-        print 'import file'
+        dialog = ImportDocumentDialog()
+        response = dialog.run()
+        if response == gtk.RESPONSE_OK:
+            filename = dialog.get_filename()
+            tags = dialog.get_tags()
+            self._library.add_doc(filename, tags)
+        dialog.destroy()
+        self._update_tags_treeview()
+        self._update_docs_iconview()
 
     def on_import_dir(self, *args):
         print 'import dir'        
