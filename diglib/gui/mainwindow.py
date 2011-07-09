@@ -14,6 +14,7 @@ from diglib.gui.aboutdialog import AboutDialog
 from diglib.gui.addtagdialog import AddTagDialog
 from diglib.gui.docpropdialog import DocumentPropertiesDialog
 from diglib.gui.importdocdialog import ImportDocumentDialog
+from diglib.gui.importdirwindow import ImportDirectoryWindow
 
 
 class MainWindow(XMLWidget):
@@ -113,7 +114,10 @@ class MainWindow(XMLWidget):
         self._update_docs_iconview()
 
     def on_import_dir(self, *args):
-        print 'import dir'        
+        window = ImportDirectoryWindow(self._library)
+        window.show()
+        self._update_tags_treeview()
+        self._update_docs_iconview()
 
     def on_open_docs(self, *args):
         for doc_id in self._iter_selected_docs():

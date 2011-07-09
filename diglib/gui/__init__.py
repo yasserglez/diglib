@@ -27,4 +27,5 @@ class GUI(object):
 
     def start(self):
         self._main_window.show()
+        gtk.gdk.threads_init()
         gtk.main()
