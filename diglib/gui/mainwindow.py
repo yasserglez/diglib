@@ -204,6 +204,18 @@ class MainWindow(XMLWidget):
             tags_scrolledwindow.show()
         else:
             tags_scrolledwindow.hide()
+            
+    def on_tag_menuitem_toggled(self, checkmenuitem):
+        tag = checkmenuitem.get_label()
+        selected_docs = [self._library.get_doc(hash_md5)
+                         for hash_md5 in self._iter_selected_docs()]
+        for doc in selected_docs:
+            if checkmenuitem.get_active():
+                doc.tags.add(tag)
+            else:
+                doc.tags.discard(tag)
+            self._library.update_tags(doc.hash_md5, doc.tags)
+        self._update_tags_treeview()
 
     def on_icons_size_menuitem_toggled(self, radiomenuitem, new_size):
         if radiomenuitem.get_active() and self._doc_icons_size != new_size:
@@ -240,7 +252,7 @@ class MainWindow(XMLWidget):
                     selection.select_path(path)
                 menu = self._builder.get_object('tags_menu')
                 menu.popup(None, None, None, event.button, event.time)
-                menu.show()                                                
+                menu.show()
 
     def on_docs_iconview_button_press_event(self, iconview, event):
         if event.button == 3: # Right button.
@@ -252,6 +264,25 @@ class MainWindow(XMLWidget):
                 menu = self._builder.get_object('docs_menu')
                 menu.popup(None, None, None, event.button, event.time)
                 menu.show()
+
+    def _populate_doc_tags_menu(self):
+        menu = self._builder.get_object('doc_tags_menu')
+        menu.foreach(lambda menu_item: menu.remove(menu_item))
+        tag_sets = [self._library.get_doc(hash_md5).tags
+                    for hash_md5 in self._iter_selected_docs()]
+        if tag_sets:
+            first_set = tag_sets[0]
+            other_sets = tag_sets[1:]
+            active_tags = first_set.intersection(*other_sets)
+            for model_row in self._tags_liststore:
+                if model_row[self.TAG_COLUMN_TYPE] == self.TAG_ROW_TAG:
+                    tag = model_row[self.TAG_COLUMN_TAG]
+                    menu_item = gtk.CheckMenuItem(tag)
+                    if tag in active_tags:
+                        menu_item.activate()
+                    menu_item.connect('toggled', self.on_tag_menuitem_toggled)
+                    menu.append(menu_item)
+            menu.show_all()
 
     def on_main_window_destroy(self, widget):
         gtk.main_quit()
@@ -275,6 +306,10 @@ class MainWindow(XMLWidget):
         self._update_docs_iconview()
         
     def on_docs_iconview_selection_changed(self, iconview):
+        selected_docs_count = self._count_selected_docs()
+        menuitem = self._builder.get_object('docs_menuitem')
+        menuitem.set_sensitive(selected_docs_count > 0)
+        self._populate_doc_tags_menu()
         self._update_statusbar()
 
     def on_doc_properties(self, *args):
