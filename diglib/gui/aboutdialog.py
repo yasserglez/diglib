@@ -2,7 +2,7 @@
 
 import gtk
 
-import diglib
+from diglib import about
 from diglib.gui.util import open_url, open_email, get_image
 
 
@@ -16,12 +16,12 @@ class AboutDialog(gtk.AboutDialog):
         email_hook = lambda dialog, email, data: open_email(email)
         gtk.about_dialog_set_email_hook(email_hook, None)
         self.set_logo(gtk.gdk.pixbuf_new_from_file(get_image('diglib.svg')))
-        self.set_name(diglib.NAME)
-        self.set_program_name(diglib.NAME)
-        self.set_version(diglib.VERSION)
-        self.set_comments(diglib.DESCRIPTION)
-        self.set_authors([diglib.AUTHOR])
-        self.set_copyright(diglib.COPYRIGHT)
+        self.set_name(about.NAME)
+        self.set_program_name(about.NAME)
+        self.set_version(about.VERSION)
+        self.set_comments(about.DESCRIPTION)
+        self.set_authors([about.AUTHOR])
+        self.set_copyright(about.COPYRIGHT)
         self.set_wrap_license(True)
         self.set_license(
 'This program is free software: you can redistribute it and/or \
