@@ -12,11 +12,11 @@ class AddTagDialog(gtk.Dialog):
         self.set_modal(True)
         self.set_resizable(False)
         self.set_position(gtk.WIN_POS_CENTER_ON_PARENT)
-        self.set_border_width(4)
+        self.set_border_width(12)
         content_area = self.get_content_area()
-        content_area.set_spacing(4)
+        content_area.set_spacing(18)
         hbox = gtk.HBox()
-        hbox.set_spacing(8)
+        hbox.set_spacing(12)
         label = gtk.Label('Tag:')
         hbox.pack_start(label)
         self.tag_entry = gtk.Entry()
@@ -28,5 +28,8 @@ class AddTagDialog(gtk.Dialog):
         self.add_button('Add', gtk.RESPONSE_ACCEPT)
         self.set_default_response(gtk.RESPONSE_ACCEPT)
 
+    def get_tag(self):
+        return self._tag
+
     def on_response(self, dialog, response_id):
-        self.tag = self.tag_entry.get_text().strip()
+        self._tag = self.tag_entry.get_text().strip()

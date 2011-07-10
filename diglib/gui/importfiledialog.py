@@ -4,10 +4,10 @@ from diglib.core.util import tags_from_text
 from diglib.gui.xmlwidget import XMLWidget
 
 
-class ImportDocumentDialog(XMLWidget):
+class ImportFileDialog(XMLWidget):
     
     def __init__(self):
-        super(ImportDocumentDialog, self).__init__('import_doc_dialog')
+        super(ImportFileDialog, self).__init__('import_file_dialog')
         self._filename = None
         self._tags = None
 

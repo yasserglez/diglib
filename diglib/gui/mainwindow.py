@@ -12,8 +12,7 @@ from diglib.gui.xmlwidget import XMLWidget
 from diglib.gui.searchentry import SearchEntry
 from diglib.gui.aboutdialog import AboutDialog
 from diglib.gui.addtagdialog import AddTagDialog
-from diglib.gui.docpropdialog import DocumentPropertiesDialog
-from diglib.gui.importdocdialog import ImportDocumentDialog
+from diglib.gui.importfiledialog import ImportFileDialog
 from diglib.gui.importdirwindow import ImportDirectoryWindow
 
 
@@ -101,15 +100,35 @@ class MainWindow(XMLWidget):
         # Other tree view settings.
         tags_treeview.set_headers_visible(False)
         tags_treeview.set_search_column(self.TAG_COLUMN_TAG)
+
+    def _init_docs_iconview(self):
+        docs_iconview = self._builder.get_object('docs_iconview')
+        self.DOC_COLUMN_ID = 0
+        self.DOC_COLUMN_ICON = 1
+        self.DOC_ICONS_SMALL = 0
+        self.DOC_ICONS_NORMAL = 1
+        self.DOC_ICONS_LARGE = 2
+        # Initialize the list store and the icon view.
+        self._docs_liststore = gtk.ListStore(str, gtk.gdk.Pixbuf)
+        docs_iconview.set_model(self._docs_liststore)
+        docs_iconview.set_pixbuf_column(self.DOC_COLUMN_ICON)
+        docs_iconview.set_selection_mode(gtk.SELECTION_MULTIPLE)
+        docs_iconview.connect('selection-changed', self.on_docs_iconview_selection_changed)
+        self._doc_icons_size = self.DOC_ICONS_NORMAL
+        # Default document icons.
+        doc_icon = get_image('diglib-document.svg')
+        self._doc_icon_small = gtk.gdk.pixbuf_new_from_file_at_size(doc_icon, self._library.THUMBNAIL_SIZE_SMALL, self._library.THUMBNAIL_SIZE_SMALL)
+        self._doc_icon_normal = gtk.gdk.pixbuf_new_from_file_at_size(doc_icon, self._library.THUMBNAIL_SIZE_NORMAL, self._library.THUMBNAIL_SIZE_NORMAL)
+        self._doc_icon_large = gtk.gdk.pixbuf_new_from_file_at_size(doc_icon, self._library.THUMBNAIL_SIZE_LARGE, self._library.THUMBNAIL_SIZE_LARGE)        
         
     def on_import_file(self, *args):
-        dialog = ImportDocumentDialog()
+        dialog = ImportFileDialog()
         response = dialog.run()
-        if response == gtk.RESPONSE_OK:
-            filename = dialog.get_filename()
-            tags = dialog.get_tags()
-            self._library.add_doc(filename, tags)
+        filename = dialog.get_filename()
+        tags = dialog.get_tags()
         dialog.destroy()
+        if response == gtk.RESPONSE_OK:
+            self._library.add_doc(filename, tags)
         self._update_tags_treeview()
         self._update_docs_iconview()
 
@@ -197,9 +216,10 @@ class MainWindow(XMLWidget):
     def on_add_tag(self, *args):
         dialog = AddTagDialog(self._widget)
         response = dialog.run()
+        tag = dialog.get_tag()
         dialog.destroy()
-        if response == gtk.RESPONSE_ACCEPT and dialog.tag:
-            self._library.add_tag(dialog.tag)
+        if response == gtk.RESPONSE_ACCEPT and tag:
+            self._library.add_tag(tag)
             self._update_tags_treeview()
 
     def on_close_menuitem_activate(self, menuitem):
@@ -276,26 +296,7 @@ class MainWindow(XMLWidget):
                 menu = self._builder.get_object('docs_menu')
                 menu.popup(None, None, None, event.button, event.time)
                 menu.show()
-
-    def _populate_doc_tags_menu(self):
-        menu = self._builder.get_object('doc_tags_menu')
-        menu.foreach(lambda menu_item: menu.remove(menu_item))
-        tag_sets = [self._library.get_doc(hash_md5).tags
-                    for hash_md5 in self._iter_selected_docs()]
-        if tag_sets:
-            first_set = tag_sets[0]
-            other_sets = tag_sets[1:]
-            active_tags = first_set.intersection(*other_sets)
-            for model_row in self._tags_liststore:
-                if model_row[self.TAG_COLUMN_TYPE] == self.TAG_ROW_TAG:
-                    tag = model_row[self.TAG_COLUMN_TAG]
-                    menu_item = gtk.CheckMenuItem(tag)
-                    if tag in active_tags:
-                        menu_item.activate()
-                    menu_item.connect('toggled', self.on_tag_menuitem_toggled)
-                    menu.append(menu_item)
-            menu.show_all()
-
+                
     def on_main_window_destroy(self, widget):
         gtk.main_quit()
 
@@ -316,42 +317,32 @@ class MainWindow(XMLWidget):
         for tag in self._iter_selected_tags():
             self._selected_tags.add(tag)
         self._update_docs_iconview()
-        
+
     def on_docs_iconview_selection_changed(self, iconview):
-        selected_docs_count = self._count_selected_docs()
+        selected_docs_count = len(list(self._iter_selected_docs()))
         menuitem = self._builder.get_object('docs_menuitem')
         menuitem.set_sensitive(selected_docs_count > 0)
         self._populate_doc_tags_menu()
         self._update_statusbar()
 
-    def on_doc_properties(self, *args):
-        selected = list(self._iter_selected_docs())
-        selected_count = len(selected)
-        if selected_count > 0:
-            doc = self._library.get_doc(selected[0])
-            dialog = DocumentPropertiesDialog(self._widget, doc)
-            dialog.run()
-            dialog.destroy()
-
-    def _init_docs_iconview(self):
-        docs_iconview = self._builder.get_object('docs_iconview')
-        self.DOC_COLUMN_ID = 0
-        self.DOC_COLUMN_ICON = 1
-        self.DOC_ICONS_SMALL = 0
-        self.DOC_ICONS_NORMAL = 1
-        self.DOC_ICONS_LARGE = 2
-        # Initialize the list store and the icon view.
-        self._docs_liststore = gtk.ListStore(str, gtk.gdk.Pixbuf)
-        docs_iconview.set_model(self._docs_liststore)
-        docs_iconview.set_pixbuf_column(self.DOC_COLUMN_ICON)
-        docs_iconview.set_selection_mode(gtk.SELECTION_MULTIPLE)
-        docs_iconview.connect('selection-changed', self.on_docs_iconview_selection_changed)
-        self._doc_icons_size = self.DOC_ICONS_NORMAL
-        # Default document icons.
-        doc_icon = get_image('diglib-document.svg')
-        self._doc_icon_small = gtk.gdk.pixbuf_new_from_file_at_size(doc_icon, self._library.THUMBNAIL_SIZE_SMALL, self._library.THUMBNAIL_SIZE_SMALL)
-        self._doc_icon_normal = gtk.gdk.pixbuf_new_from_file_at_size(doc_icon, self._library.THUMBNAIL_SIZE_NORMAL, self._library.THUMBNAIL_SIZE_NORMAL)
-        self._doc_icon_large = gtk.gdk.pixbuf_new_from_file_at_size(doc_icon, self._library.THUMBNAIL_SIZE_LARGE, self._library.THUMBNAIL_SIZE_LARGE)
+    def _populate_doc_tags_menu(self):
+        menu = self._builder.get_object('doc_tags_menu')
+        menu.foreach(lambda menu_item: menu.remove(menu_item))
+        tag_sets = [self._library.get_doc(hash_md5).tags
+                    for hash_md5 in self._iter_selected_docs()]
+        if tag_sets:
+            first_set = tag_sets[0]
+            other_sets = tag_sets[1:]
+            active_tags = first_set.intersection(*other_sets)
+            for model_row in self._tags_liststore:
+                if model_row[self.TAG_COLUMN_TYPE] == self.TAG_ROW_TAG:
+                    tag = model_row[self.TAG_COLUMN_TAG]
+                    menu_item = gtk.CheckMenuItem(tag)
+                    if tag in active_tags:
+                        menu_item.activate()
+                    menu_item.connect('toggled', self.on_tag_menuitem_toggled)
+                    menu.append(menu_item)
+            menu.show_all()
 
     def _update_tags_treeview(self):
         self._tags_liststore.clear()
@@ -375,10 +366,6 @@ class MainWindow(XMLWidget):
                 font_size = int(s + (S - s) * ((t - f) / (F - f)))
                 font_desc.set_size(font_size)
             self._tags_liststore.append([self.TAG_ROW_TAG, tag, font_desc])
-        # Update the selection.
-#        tags_treeview = self._builder.get_object('tags_treeview')
-#        selection = tags_treeview.get_selection()
-#        selection.select_iter(self._tags_liststore.get_iter_first())
 
     def _update_docs_iconview(self):
         self._docs_liststore.clear()
@@ -406,8 +393,9 @@ class MainWindow(XMLWidget):
         text = ''
         total_docs = len(self._docs_liststore)
         if total_docs:
-            text += '%s %s' % (total_docs, 'documents' if total_docs > 1 else 'document')
-            selected_docs = self._count_selected_docs()
+            text += '%s %s' % (total_docs, 'documents' 
+                               if total_docs > 1 else 'document')
+            selected_docs = len(list(self._iter_selected_docs()))
             if selected_docs:
                 text += ' (%s selected)' % selected_docs
         statusbar.push(0, text)
@@ -437,9 +425,6 @@ class MainWindow(XMLWidget):
             iter = self._docs_liststore.get_iter(path)
             doc_id = self._docs_liststore.get_value(iter, self.DOC_COLUMN_ID)
             yield doc_id
-            
-    def _count_selected_docs(self):
-        return len(list(self._iter_selected_docs()))
             
     def _iter_selected_tags(self):
         tags_treeview = self._builder.get_object('tags_treeview')

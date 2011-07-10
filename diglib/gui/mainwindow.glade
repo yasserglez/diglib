@@ -232,16 +232,6 @@
                         </child>
                       </object>
                     </child>
-                    <child>
-                      <object class="GtkMenuItem" id="doc_properties_menuitem">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="use_action_appearance">False</property>
-                        <property name="label" translatable="yes">_Properties</property>
-                        <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_doc_properties" swapped="no"/>
-                      </object>
-                    </child>
                   </object>
                 </child>
               </object>
