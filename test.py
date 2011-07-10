@@ -5,11 +5,9 @@ import os
 import shutil
 import unittest
 
-from diglib.core import DigitalLibrary
+from diglib.core import DigitalLibrary, error
 from diglib.core.index import XapianIndex
 from diglib.core.database import SQLAlchemyDatabase
-from diglib.core import DocumentNotFound, ExactDuplicateError, \
-                        SimilarDuplicateError, NotRetrievableError
 
 
 class TestDigitalLibrary(unittest.TestCase):
@@ -61,29 +59,29 @@ class TestDigitalLibrary(unittest.TestCase):
         self._assert_docs_equal(pdf_doc, other_pdf_doc)
 
     def test_add_doc_exact_duplicate(self):
-        with self.assertRaises(ExactDuplicateError):
+        with self.assertRaises(error.ExactDuplicateError):
             self.test_add_doc_txt()
             self.test_add_doc_txt()
 
     def test_add_doc_similar_duplicate(self):
-        with self.assertRaises(SimilarDuplicateError):
+        with self.assertRaises(error.SimilarDuplicateError):
             self.test_add_doc_txt()
             similar_path = os.path.join(self._test_dir, 'similar.txt')
             self._library.add_doc(similar_path, set(['vine', 'copula', 'veda']))
 
     def test_add_doc_not_retrievable(self):
-        with self.assertRaises(NotRetrievableError):
+        with self.assertRaises(error.NotRetrievableError):
             doc_path = os.path.join(self._test_dir, 'not-retrievable.txt')
             self._library.add_doc(doc_path, set(['veda']))
 
     def test_get_doc_not_found(self):
-        with self.assertRaises(DocumentNotFound):
+        with self.assertRaises(error.DocumentNotFound):
             self._library.get_doc('7d78df0a62e07eeeef6b942abe5bdc7f')
 
     def test_delete_doc(self):
         pdf_doc = self.test_add_doc_pdf()
         self._library.delete_doc(pdf_doc.hash_md5)
-        with self.assertRaises(DocumentNotFound):
+        with self.assertRaises(error.DocumentNotFound):
             self._library.get_doc(pdf_doc.hash_md5)
 
     def test_get_all_tags(self):
@@ -111,7 +109,7 @@ class TestDigitalLibrary(unittest.TestCase):
     def test_delete_tag_not_retrievable(self):
         doc_path = os.path.join(self._test_dir, 'not-retrievable.txt')
         self._library.add_doc(doc_path, set('abc'))
-        with self.assertRaises(NotRetrievableError):
+        with self.assertRaises(error.NotRetrievableError):
             self._library.delete_tag('a')
 
     def test_rename_tag_free(self):

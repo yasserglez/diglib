@@ -14,7 +14,8 @@ import magic
 
 # File handlers used to extract information from the different document formats
 # supported by the library. Each handler is identified by the MIME type of the
-# format it handles.
+# format it supports.
+
 class FileHandler(object):
 
     mime_type = None

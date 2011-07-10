@@ -6,7 +6,7 @@ import urllib
 import gtk
 import pango
 
-from diglib.core import NotRetrievableError
+from diglib.core import error
 from diglib.gui.util import open_file, get_image
 from diglib.gui.xmlwidget import XMLWidget
 from diglib.gui.searchentry import SearchEntry
@@ -179,7 +179,7 @@ class MainWindow(XMLWidget):
                     try:
                         self._library.delete_tag(tag)
                         update = True
-                    except NotRetrievableError:
+                    except error.NotRetrievableError:
                         message = 'Could not delete the tag "%s".' % tag
                         secondary_text = 'If the tag is deleted at least ' \
                             'one document could not be retrieved.'

@@ -2,6 +2,8 @@
 
 import gtk
 
+from diglib.core.util import text_from_tags
+
 
 class DocumentPropertiesDialog(gtk.Dialog):
 
@@ -21,7 +23,7 @@ class DocumentPropertiesDialog(gtk.Dialog):
         model.append(['<b>CTPH</b>', doc.hash_ssdeep])
         model.append(['<b>MIME Type</b>', doc.mime_type])
         model.append(['<b>Language Code</b>', doc.language_code])
-        model.append(['<b>Tags</b>', ', '.join(doc.tags)])
+        model.append(['<b>Tags</b>', text_from_tags(doc.tags)])
         model.append(['<b>Document Size</b>', doc.document_size])
         model.append(['<b>Document Path</b>', doc.document_abspath])
         model.append(['<b>Small Thumbnail Path</b>', doc.small_thumbnail_abspath])

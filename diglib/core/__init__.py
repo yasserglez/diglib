@@ -6,36 +6,9 @@ import hashlib
 import magic
 import ssdeep
 
-from diglib.core.handlers import get_handler
+from diglib.core import error
 from diglib.core.lang import get_lang
-
-
-class DigitalLibraryError(Exception):
-    pass
-
-
-class DocumentError(DigitalLibraryError):
-    pass
-
-
-class DocumentNotFound(DocumentError):
-    pass
-
-
-class DuplicateError(DocumentError):
-    pass
-
-
-class ExactDuplicateError(DuplicateError):
-    pass
-
-
-class SimilarDuplicateError(DuplicateError):
-    pass
-
-
-class NotRetrievableError(DocumentError):
-    pass
+from diglib.core.handlers import get_handler
 
 
 class Document(object):
@@ -69,16 +42,12 @@ class Document(object):
         self.language_code = language_code
         self.tags = tags
 
-    # The following two methods are used by DigitalLibrary to set the absolute path
-    # of the directories with the documents and the thumbnails. Keeping this paths
-    # out of the database allows moving the directory of the library.
-
     def set_documents_dir(self, documents_dir):
         self._documents_dir = documents_dir
 
     def set_thumbnails_dir(self, thumbnails_dir):
         self._thumbnails_dir = thumbnails_dir
-        
+
     def _get_thumbnail_abspath(self, size_name):
         return (os.path.join(self._thumbnails_dir, size_name, self.thumbnail_path)
                 if self.thumbnail_path else None)
@@ -130,6 +99,8 @@ class DigitalLibrary(object):
         # Copy the document to the library.
         path = map(lambda i: hash_md5[i-2:i], range(2, 32, 2))
         mime_type = self._magic.buffer(doc_data)
+        if mime_type not in self.MIME_TYPES:
+            raise error.DocumentNotSupported()
         doc_path = os.path.join(*path) + self.MIME_TYPES[mime_type]
         doc_abspath = os.path.join(self._documents_dir, doc_path)
         os.makedirs(os.path.dirname(doc_abspath))
@@ -140,7 +111,7 @@ class DigitalLibrary(object):
         handler = get_handler(doc_abspath, mime_type)
         for size_name, size in (('small', self.THUMBNAIL_SIZE_SMALL),
                                 ('normal', self.THUMBNAIL_SIZE_NORMAL),
-                                ('large', self.THUMBNAIL_SIZE_LARGE)):    
+                                ('large', self.THUMBNAIL_SIZE_LARGE)):
             thumbnail_data = handler.get_thumbnail(size, size)
             if thumbnail_data:
                 thumbnail_path = os.path.join(*path) + '.png'
@@ -155,12 +126,12 @@ class DigitalLibrary(object):
         language_code = get_lang(content)
         doc = Document(hash_md5, hash_ssdeep, mime_type, doc_path,
                        doc_size, thumbnail_path, language_code, tags)
-        self._database.add_doc(doc)
-        self._index.add_doc(doc, content, metadata)
+        self._index.add_doc(doc, content, metadata) # To know the number of terms.
         # Check if the document can be retrieved with the available information.
         if not self._is_retrievable(doc):
-            self.delete_doc(doc.hash_md5)
-            raise NotRetrievableError()
+            self._index.delete_doc(hash_md5)
+            raise error.NotRetrievableError()
+        self._database.add_doc(doc)
         doc.set_documents_dir(self._documents_dir)
         doc.set_thumbnails_dir(self._thumbnails_dir)
         return doc
@@ -172,7 +143,7 @@ class DigitalLibrary(object):
             doc.set_thumbnails_dir(self._thumbnails_dir)
             return doc
         else:
-            raise DocumentNotFound()
+            raise error.DocumentNotFound()
 
     def delete_doc(self, hash_md5):
         doc = self._database.get_doc(hash_md5)
@@ -216,7 +187,7 @@ class DigitalLibrary(object):
             doc = self.get_doc(hash_md5)
             if (len(doc.tags) == self.MIN_TAGS and
                 self._index.get_doc_terms_count(doc.hash_md5) < self.MIN_TERMS):
-                raise NotRetrievableError()
+                raise error.NotRetrievableError()
         self._database.delete_tag(tag)
         self._index.delete_tag(tag)
 
@@ -231,7 +202,7 @@ class DigitalLibrary(object):
     # Check if the document (or a similar document) is already in the database.
     def _check_duplicated(self, hash_md5, hash_ssdeep, doc_size):
         if self._database.get_doc(hash_md5):
-            raise ExactDuplicateError()
+            raise error.ExactDuplicateError()
         eps = max(0.25 * doc_size, 102400)
         lower_size = max(0, doc_size - eps)
         upper_size = doc_size + eps
@@ -239,7 +210,7 @@ class DigitalLibrary(object):
         for doc in docs:
             score = ssdeep.compare(hash_ssdeep, doc.hash_ssdeep)
             if score >= self.SSDEEP_THRESHOLD:
-                raise SimilarDuplicateError()
+                raise error.SimilarDuplicateError()
 
     # Check if the document can be retrieved with the available information.
     def _is_retrievable(self, doc):

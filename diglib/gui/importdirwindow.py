@@ -7,7 +7,7 @@ import threading
 import gtk
 import gobject
 
-from diglib.core.util import parse_tags
+from diglib.core.util import tags_from_text
 from diglib.gui.xmlwidget import XMLWidget
 
 
@@ -43,7 +43,7 @@ class ImportDirectoryWindow(XMLWidget):
         filechooser = self._builder.get_object('filechooserbutton')
         entry = self._builder.get_object('tags_entry')
         dir_path = filechooser.get_filename()
-        tags = parse_tags(entry.get_text())
+        tags = tags_from_text(entry.get_text())
         # Disable all widgets but the ones reporting progress.
         self._progress_vbox.set_sensitive(True)
         self._table.set_sensitive(False)

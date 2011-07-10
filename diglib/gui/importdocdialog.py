@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from diglib.core.util import parse_tags
+from diglib.core.util import tags_from_text
 from diglib.gui.xmlwidget import XMLWidget
 
 
@@ -23,4 +23,4 @@ class ImportDocumentDialog(XMLWidget):
         button.set_sensitive(True)
 
     def on_tags_entry_changed(self, entry):
-        self._tags = parse_tags(entry.get_text())
+        self._tags = tags_from_text(entry.get_text())
