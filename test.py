@@ -73,7 +73,7 @@ class TestDigitalLibrary(unittest.TestCase):
         other_pdf_doc = self._library.get_doc(pdf_doc.hash_md5)
         self._assert_docs_equal(txt_doc, other_txt_doc)
         self._assert_docs_equal(pdf_doc, other_pdf_doc)
-
+        
     def test_add_doc_exact_duplicate(self):
         with self.assertRaises(error.ExactDuplicateError):
             self.test_add_doc_txt()
@@ -99,6 +99,11 @@ class TestDigitalLibrary(unittest.TestCase):
         self._library.delete_doc(pdf_doc.hash_md5)
         with self.assertRaises(error.DocumentNotFound):
             self._library.get_doc(pdf_doc.hash_md5)
+
+    def test_add_doc_previously_imported(self):
+        pdf_doc = self.test_add_doc_pdf()
+        self._library.delete_doc(pdf_doc.hash_md5)
+        self.test_add_doc_pdf()
 
     def test_get_all_tags(self):
         self.assertSetEqual(self._library.get_all_tags(), set())
@@ -189,7 +194,7 @@ class TestDigitalLibrary(unittest.TestCase):
         self.test_add_doc_pdf()
         results = self._library.search('+VEDA evolutionary optimization', set(['vine', 'copula', 'veda']))
         self.assertListEqual(results, [txt_doc.hash_md5])
-
+        
     def _assert_docs_equal(self, x, y):
         self.assertEqual(x.hash_md5, y.hash_md5)
         self.assertEqual(x.hash_ssdeep, y.hash_ssdeep)

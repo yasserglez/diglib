@@ -119,7 +119,8 @@ class DigitalLibrary(object):
             raise error.DocumentNotSupported()
         doc_path = os.path.join(*path) + self.MIME_TYPES[mime_type]
         doc_abspath = os.path.join(self._documents_dir, doc_path)
-        os.makedirs(os.path.dirname(doc_abspath))
+        if not os.path.exists(os.path.dirname(doc_abspath)):
+            os.makedirs(os.path.dirname(doc_abspath))
         with open(doc_abspath, 'wb') as file:
             file.write(doc_data)
         # Generate the thumbnails.
@@ -133,7 +134,8 @@ class DigitalLibrary(object):
                 thumbnail_path = os.path.join(*path) + '.png'
                 thumbnail_abspath = \
                     os.path.join(self._thumbnails_dir, size_name, thumbnail_path)
-                os.makedirs(os.path.dirname(thumbnail_abspath))
+                if not os.path.exists(os.path.dirname(thumbnail_abspath)):
+                    os.makedirs(os.path.dirname(thumbnail_abspath))
                 with open(thumbnail_abspath, 'wb') as file:
                     file.write(thumbnail_data)
         # Add the document to the database and the index.

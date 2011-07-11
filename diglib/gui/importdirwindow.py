@@ -94,8 +94,6 @@ class ImportDirectoryWindow(XMLWidget):
                 result = 'The document is not retrievable.'
             except error.DocumentNotSupported:
                 result = 'The format of the document not supported.'
-            except:
-                result = 'Unexpected error'
             else:
                 result = 'The document was imported.'
             with gtk.gdk.lock:
