@@ -154,6 +154,7 @@
                     <child>
                       <object class="GtkMenuItem" id="rename_tag_menuitem">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_Rename</property>
@@ -164,6 +165,7 @@
                     <child>
                       <object class="GtkMenuItem" id="delete_tags_menuitem">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_Delete</property>
@@ -362,6 +364,7 @@
             <child>
               <object class="GtkToolButton" id="delete_tags_toolbutton">
                 <property name="visible">True</property>
+                <property name="sensitive">False</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Delete tags</property>
                 <property name="use_action_appearance">False</property>
@@ -389,6 +392,7 @@
             <child>
               <object class="GtkToolButton" id="open_docs_toolbutton">
                 <property name="visible">True</property>
+                <property name="sensitive">False</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Open documents</property>
                 <property name="use_action_appearance">False</property>
@@ -405,6 +409,7 @@
             <child>
               <object class="GtkToolButton" id="copy_docs_toolbutton">
                 <property name="visible">True</property>
+                <property name="sensitive">False</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Copy documents</property>
                 <property name="use_action_appearance">False</property>
@@ -421,6 +426,7 @@
             <child>
               <object class="GtkToolButton" id="delete_docs_toolbutton">
                 <property name="visible">True</property>
+                <property name="sensitive">False</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Delete documents</property>
                 <property name="use_action_appearance">False</property>

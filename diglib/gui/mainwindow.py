@@ -65,6 +65,12 @@ class MainWindow(XMLWidget):
         self._small_icons_menuitem = self._builder.get_object('small_icons_menuitem')
         self._normal_icons_menuitem = self._builder.get_object('normal_icons_menuitem')
         self._large_icons_menuitem = self._builder.get_object('large_icons_menuitem')
+        self._rename_tag_menuitem = self._builder.get_object('rename_tag_menuitem')
+        self._delete_tags_menuitem = self._builder.get_object('delete_tags_menuitem')
+        self._delete_tags_toolbutton = self._builder.get_object('delete_tags_toolbutton')
+        self._open_docs_toolbutton = self._builder.get_object('open_docs_toolbutton')
+        self._copy_docs_toolbutton = self._builder.get_object('copy_docs_toolbutton')
+        self._delete_docs_toolbutton = self._builder.get_object('delete_docs_toolbutton')
         # Other instance attributes.
         self._library = library
         self._search_timeout = 1000 # milliseconds.
@@ -356,14 +362,19 @@ class MainWindow(XMLWidget):
         self._update_docs_iconview()
 
     def on_tags_treeview_selection_changed(self, *args):
-        self._selected_tags.clear()
-        for tag in self._iter_selected_tags():
-            self._selected_tags.add(tag)
+        self._selected_tags = set(self._iter_selected_tags())
+        sensitive = len(self._selected_tags) > 0
+        self._rename_tag_menuitem.set_sensitive(sensitive)
+        self._delete_tags_menuitem.set_sensitive(sensitive)
+        self._delete_tags_toolbutton.set_sensitive(sensitive)
         self._update_docs_iconview()
 
     def on_docs_iconview_selection_changed(self, iconview):
-        num_docs = len(list(self._iter_selected_docs()))
-        self._docs_menuitem.set_sensitive(num_docs > 0)
+        sensitive = len(list(self._iter_selected_docs())) > 0
+        self._docs_menuitem.set_sensitive(sensitive)
+        self._open_docs_toolbutton.set_sensitive(sensitive)
+        self._copy_docs_toolbutton.set_sensitive(sensitive)
+        self._delete_docs_toolbutton.set_sensitive(sensitive)
         self._populate_doc_tags_menu()
         self._update_statusbar()
 
