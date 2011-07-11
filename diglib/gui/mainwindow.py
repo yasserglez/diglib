@@ -21,6 +21,7 @@ import urllib
 
 import gtk
 import pango
+import gobject
 
 from diglib import about
 from diglib.core import error
@@ -73,6 +74,7 @@ class MainWindow(XMLWidget):
         self._delete_docs_toolbutton = self._builder.get_object('delete_docs_toolbutton')
         # Other instance attributes.
         self._library = library
+        self._search_timeout_id = 0
         self._search_timeout = 1000 # milliseconds.
         self._query = ''
         self._selected_tags = set()
@@ -304,14 +306,14 @@ class MainWindow(XMLWidget):
     def on_icons_size_menuitem_toggled(self, radiomenuitem, new_size):
         if radiomenuitem.get_active() and self._docs_icon_size != new_size:
             self._docs_icon_size = new_size
-            self._sync_icons_size_widgets()
+            self._update_icons_size_widgets()
             self._update_docs_iconview()
 
     def on_icons_size_combobox_changed(self, combobox):
         new_size = combobox.get_active()
         if self._docs_icon_size != new_size:
             self._docs_icon_size = new_size
-            self._sync_icons_size_widgets()
+            self._update_icons_size_widgets()
             self._update_docs_iconview()
 
     def on_rename_tag_menuitem_activate(self, menuitem):
@@ -367,7 +369,9 @@ class MainWindow(XMLWidget):
         self._rename_tag_menuitem.set_sensitive(sensitive)
         self._delete_tags_menuitem.set_sensitive(sensitive)
         self._delete_tags_toolbutton.set_sensitive(sensitive)
-        self._update_docs_iconview()
+        if self._search_timeout_id > 0:
+            gobject.source_remove(self._search_timeout_id)
+        gobject.timeout_add(self._search_timeout, self._search_timeout_callback)
 
     def on_docs_iconview_selection_changed(self, iconview):
         sensitive = len(list(self._iter_selected_docs())) > 0
@@ -375,10 +379,10 @@ class MainWindow(XMLWidget):
         self._open_docs_toolbutton.set_sensitive(sensitive)
         self._copy_docs_toolbutton.set_sensitive(sensitive)
         self._delete_docs_toolbutton.set_sensitive(sensitive)
-        self._populate_doc_tags_menu()
+        self._update_doc_tags_menu()
         self._update_statusbar()
 
-    def _populate_doc_tags_menu(self):
+    def _update_doc_tags_menu(self):
         callback = lambda menuitem: self._doc_tags_menu.remove(menuitem)
         self._doc_tags_menu.foreach(callback)
         tag_sets = [self._library.get_doc(hash_md5).tags
@@ -451,6 +455,15 @@ class MainWindow(XMLWidget):
                 text += ' (%s selected)' % selected_docs
         self._statusbar.push(0, text)
 
+    def _update_icons_size_widgets(self):
+        self._icon_size_combobox.set_active(self._docs_icon_size)
+        if self._docs_icon_size == self.DOC_ICON_SMALL:
+            self._small_icons_menuitem.set_active(True)
+        elif self._docs_icon_size == self.DOC_ICON_NORMAL:
+            self._normal_icons_menuitem.set_active(True)
+        elif self._docs_icon_size == self.DOC_ICON_LARGE:
+            self._large_icons_menuitem.set_active(True)
+
     def _tags_liststore_sort_func(self, model, iter1, iter2):
         # The 'All Documents' special row goes first, then a separator,
         # and finally all the tags in alphanumeric order.
@@ -468,6 +481,11 @@ class MainWindow(XMLWidget):
             row1_tag = model.get_value(iter1, self.TAGS_TREEVIEW_COLUMN_TAG)
             row2_tag = model.get_value(iter2, self.TAGS_TREEVIEW_COLUMN_TAG)
             return cmp(row1_tag, row2_tag)
+
+    def _search_timeout_callback(self):
+        self._search_timeout_id = 0
+        self._update_docs_iconview()
+        return False # Do not call the function again.
 
     def _iter_selected_docs(self):
         paths = self._docs_iconview.get_selected_items()
@@ -487,12 +505,3 @@ class MainWindow(XMLWidget):
             elif type == self.TAGS_TREEVIEW_ROW_TAG:
                 tag = tags_liststore.get_value(iter, self.TAGS_TREEVIEW_COLUMN_TAG)
                 yield tag
-
-    def _sync_icons_size_widgets(self):
-        self._icon_size_combobox.set_active(self._docs_icon_size)
-        if self._docs_icon_size == self.DOC_ICON_SMALL:
-            self._small_icons_menuitem.set_active(True)
-        elif self._docs_icon_size == self.DOC_ICON_NORMAL:
-            self._normal_icons_menuitem.set_active(True)
-        elif self._docs_icon_size == self.DOC_ICON_LARGE:
-            self._large_icons_menuitem.set_active(True)
