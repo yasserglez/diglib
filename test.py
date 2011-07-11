@@ -1,5 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
+# diglib: Digital Library
+# Copyright (C) 2011 Yasser González-Fernández <ygonzalezfernandez@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+# more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
 import shutil
@@ -93,7 +109,13 @@ class TestDigitalLibrary(unittest.TestCase):
         self._library.add_tag('b')
         self._library.add_tag('c')
         self.assertSetEqual(self._library.get_all_tags(), set('abc'))
-        
+
+    def test_add_tag_duplicated(self):
+        self._library.add_tag('a')
+        self.assertSetEqual(self._library.get_all_tags(), set('a'))
+        self._library.add_tag('a')
+        self.assertSetEqual(self._library.get_all_tags(), set('a'))
+
     def test_delete_tag_free(self):
         self._library.add_tag('a')
         self._library.delete_tag('a')

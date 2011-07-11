@@ -1,18 +1,38 @@
 # -*- coding: utf-8 -*-
+#
+# diglib: Digital Library
+# Copyright (C) 2011 Yasser González-Fernández <ygonzalezfernandez@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+# more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import time
 import threading
 
 import gtk
 import gobject
 
+from diglib.core import error
 from diglib.core.util import tags_from_text
 from diglib.gui.xmlwidget import XMLWidget
 
 
 class ImportDirectoryWindow(XMLWidget):
     
+    TREEVIEW_COLUMN_NAME = 0
+    TREEVIEW_COLUMN_PATH = 1
+    TREEVIEW_COLUMN_RESULT = 2
+
     def __init__(self, library):
         super(ImportDirectoryWindow, self).__init__('import_dir_window')
         # Instance attributes for widgets.
@@ -21,32 +41,31 @@ class ImportDirectoryWindow(XMLWidget):
         self._hbuttonbox = self._builder.get_object('hbuttonbox')
         self._treeview = self._builder.get_object('treeview')
         self._progress_vbox = self._builder.get_object('progress_vbox')
+        self._tags_entry = self._builder.get_object('tags_entry')
+        self._filechooserbutton = self._builder.get_object('filechooserbutton')
         self._liststore = gtk.ListStore(str, str, str)
         # Other instance attributes.
         self._library = library
-        # Initialize complex widgets.
+        # Initialize widgets.
         self._init_treeview()
 
     def _init_treeview(self):
-        COLUMN_NAME, COLUMN_PATH, COLUMN_RESULT = 0, 1, 2
         self._treeview.set_model(self._liststore)
         renderer = gtk.CellRendererText()
-        column = gtk.TreeViewColumn('File', renderer, text=COLUMN_NAME)
+        column = gtk.TreeViewColumn('File', renderer, text=self.TREEVIEW_COLUMN_NAME)
         self._treeview.append_column(column)
-        column = gtk.TreeViewColumn('Result', renderer, text=COLUMN_RESULT)
+        column = gtk.TreeViewColumn('Result', renderer, text=self.TREEVIEW_COLUMN_RESULT)
         self._treeview.append_column(column)
-        self._treeview.set_tooltip_column(COLUMN_PATH)
+        self._treeview.set_tooltip_column(self.TREEVIEW_COLUMN_PATH)
         self._treeview.columns_autosize()
         self._treeview.show_all()
 
     def on_import_button_clicked(self, button):
-        filechooser = self._builder.get_object('filechooserbutton')
-        entry = self._builder.get_object('tags_entry')
-        dir_path = filechooser.get_filename()
-        tags = tags_from_text(entry.get_text())
+        dir_path = self._filechooserbutton.get_filename()
+        tags = tags_from_text(self._tags_entry.get_text())
         # Disable all widgets but the ones reporting progress.
-        self._progress_vbox.set_sensitive(True)
         self._table.set_sensitive(False)
+        self._progress_vbox.set_sensitive(True)
         self._hbuttonbox.set_sensitive(False)
         # Start the thread importing files.
         self._thread = threading.Thread(target=self._import_docs, args=(dir_path, tags))
@@ -61,17 +80,24 @@ class ImportDirectoryWindow(XMLWidget):
         for dirpath, _, filenames in os.walk(dir_path):
             doc_paths.extend([os.path.join(dirpath, name) for name in filenames])
         total_docs = len(doc_paths)
-        # Importing each document (updating the widgets reporting progress).
+        # Importing each document (update the widgets reporting progress).
         for i, doc_path in enumerate(doc_paths):
             with gtk.gdk.lock:
                 gobject.idle_add(self._update_progressbar, i + 1, total_docs)
             try:
-                time.sleep(0.5)
-#                self._library.add_doc(doc_path, tags)
-            except Exception:
+                self._library.add_doc(doc_path, tags)
+            except error.ExactDuplicateError:
+                result = 'The document is already in the library.'
+            except error.SimilarDuplicateError:
+                result = 'A similar document is already in the library.'
+            except error.NotRetrievableError:
+                result = 'The document is not retrievable.'
+            except error.DocumentNotSupported:
+                result = 'The format of the document not supported.'
+            except:
                 result = 'Unexpected error'
             else:
-                result = 'Imported'
+                result = 'The document was imported.'
             with gtk.gdk.lock:
                 gobject.idle_add(self._update_treeview, doc_path, result)
         with gtk.gdk.lock:
@@ -85,5 +111,6 @@ class ImportDirectoryWindow(XMLWidget):
 
     def _update_treeview(self, doc_path, result):
         self._liststore.append([os.path.basename(doc_path), doc_path, result])
-        path_last = (len(self._liststore) - 1, )
-        self._treeview.scroll_to_cell(path_last)
+        # Make the last row visible.
+        last_path = (len(self._liststore) - 1, )
+        self._treeview.scroll_to_cell(last_path)

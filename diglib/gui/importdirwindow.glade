@@ -10,7 +10,6 @@
     <property name="title" translatable="yes">Import Directory</property>
     <property name="resizable">False</property>
     <property name="modal">True</property>
-    <property name="window_position">center-on-parent</property>
     <property name="destroy_with_parent">True</property>
     <property name="type_hint">dialog</property>
     <child>
@@ -161,7 +160,9 @@
               <object class="GtkButton" id="import_button">
                 <property name="label" translatable="yes">Import</property>
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
+                <property name="can_focus">False</property>
+                <property name="can_default">True</property>
+                <property name="has_default">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_action_appearance">False</property>
                 <signal name="clicked" handler="on_import_button_clicked" swapped="no"/>

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # diglib: Digital Library
@@ -16,19 +17,12 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import gtk
+import os
 
-from diglib.gui.util import get_glade
+import diglib
 
 
-class XMLWidget(object):
-
-    def __init__(self, widget_name):
-        glade_file = get_glade('%s.glade' % widget_name.replace('_', ''))
-        self._builder = gtk.Builder()
-        self._builder.add_from_file(glade_file)
-        self._builder.connect_signals(self)
-        self._widget = self._builder.get_object(widget_name)
-
-    def __getattr__(self, name):
-        return getattr(self._widget, name)
+if __name__ == '__main__':
+    # TODO: Parse command line arguments.
+    library_dir = os.path.expanduser('~/.diglib/')
+    diglib.main(library_dir)

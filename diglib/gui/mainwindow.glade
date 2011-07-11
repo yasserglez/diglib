@@ -4,7 +4,6 @@
   <!-- interface-naming-policy project-wide -->
   <object class="GtkWindow" id="main_window">
     <property name="can_focus">False</property>
-    <property name="title" translatable="yes">Digital Library</property>
     <property name="default_width">800</property>
     <property name="default_height">600</property>
     <signal name="destroy" handler="on_main_window_destroy" swapped="no"/>
@@ -179,6 +178,7 @@
             <child>
               <object class="GtkMenuItem" id="docs_menuitem">
                 <property name="visible">True</property>
+                <property name="sensitive">False</property>
                 <property name="can_focus">False</property>
                 <property name="use_action_appearance">False</property>
                 <property name="label" translatable="yes">_Documents</property>
@@ -318,7 +318,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolItem" id="icons_size_toolitem">
+              <object class="GtkToolItem" id="icon_size_toolitem">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Icons size</property>
