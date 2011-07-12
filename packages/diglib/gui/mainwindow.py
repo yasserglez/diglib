@@ -100,7 +100,7 @@ class MainWindow(XMLWidget):
         # The search text entry.
         search_toolitem = self._builder.get_object('search_toolitem')
         search_entry = SearchEntry(self._search_timeout)
-        search_entry.set_width_chars(30)
+        search_entry.set_width_chars(35)
         search_entry.connect('activate-timeout', self.on_search_entry_activate_timeout)
         search_toolitem.add(search_entry)
         search_toolitem.show_all()
