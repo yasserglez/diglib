@@ -1,11 +1,8 @@
 [Desktop Entry]
-Version=1.0
 Type=Application
-Name=diglib
-GenericName=Digital Library
-Comment=Digital document management software.
+Name=Digital Library
+Comment=Digital document management software
 Exec=diglib
 Icon=diglib
 Terminal=false
-Categories=Office;
-StartupNotify=true
+Categories=Office
