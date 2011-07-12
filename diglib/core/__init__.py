@@ -78,9 +78,9 @@ class DigitalLibrary(object):
     }
 
     # Dimensions of the thumbnails of the documents.
-    THUMBNAIL_SIZE_SMALL = 64
-    THUMBNAIL_SIZE_NORMAL = 128
-    THUMBNAIL_SIZE_LARGE = 256
+    THUMBNAIL_SIZE_SMALL = 128
+    THUMBNAIL_SIZE_NORMAL = 256
+    THUMBNAIL_SIZE_LARGE = 512
 
     # Documents whose similarity is equal or greater
     # than this threshold will be considered equals.
