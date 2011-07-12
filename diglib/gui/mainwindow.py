@@ -76,8 +76,6 @@ class MainWindow(XMLWidget):
         self._library = library
         self._search_timeout_id = 0
         self._search_timeout = 1000 # milliseconds.
-        self._query = ''
-        self._selected_tags = set()
         # Initialize widgets.
         self._main_window.set_title(about.NAME)
         self._init_tags_treeview()
@@ -85,6 +83,7 @@ class MainWindow(XMLWidget):
         self._init_toolbar()
         self._init_menubar()
         self._update_tags_treeview()
+        self._select_all_docs_tag()
         self._update_docs_iconview()
 
     def _init_toolbar(self):
@@ -186,12 +185,14 @@ class MainWindow(XMLWidget):
                 dialog.run()
                 dialog.destroy()
             else:
+                self._select_all_docs_tag()
                 self._update_tags_treeview()
                 self._update_docs_iconview()
 
     def on_import_dir(self, *args):
         window = ImportDirectoryWindow(self._library)
         window.show()
+        self._select_all_docs_tag()     
         self._update_tags_treeview()
         self._update_docs_iconview()
 
@@ -506,6 +507,12 @@ class MainWindow(XMLWidget):
         self._search_timeout_id = 0
         self._update_docs_iconview()
         return False # Do not call the function again.
+
+    def _select_all_docs_tag(self): # The tag filter.
+        self._query = ''
+        self._selected_tags = set()
+        selection = self._tags_treeview.get_selection()
+        selection.select_path((0, ))
 
     def _iter_selected_docs(self):
         paths = self._docs_iconview.get_selected_items()
