@@ -88,7 +88,7 @@ class TestDigitalLibrary(unittest.TestCase):
     def test_add_doc_not_retrievable(self):
         with self.assertRaises(error.DocumentNotRetrievable):
             doc_path = os.path.join(self._test_dir, 'not-retrievable.txt')
-            self._library.add_doc(doc_path, set(['veda']))
+            self._library.add_doc(doc_path, set())
 
     def test_get_doc_not_found(self):
         with self.assertRaises(error.DocumentNotFound):
@@ -135,7 +135,7 @@ class TestDigitalLibrary(unittest.TestCase):
 
     def test_delete_tag_not_retrievable(self):
         doc_path = os.path.join(self._test_dir, 'not-retrievable.txt')
-        self._library.add_doc(doc_path, set('abc'))
+        self._library.add_doc(doc_path, set('a'))
         with self.assertRaises(error.DocumentNotRetrievable):
             self._library.delete_tag('a')
 
@@ -163,6 +163,12 @@ class TestDigitalLibrary(unittest.TestCase):
         self.assertListEqual(self._library.search('', set('abc')), [])
         self._library.update_tags(doc.hash_md5, set('abc'))
         self.assertListEqual(self._library.search('', set('abc')), [doc.hash_md5])
+
+    def test_update_tags_not_retrievable(self):
+        doc_path = os.path.join(self._test_dir, 'not-retrievable.txt')
+        doc = self._library.add_doc(doc_path, set('abc'))
+        with self.assertRaises(error.DocumentNotRetrievable):
+            self._library.update_tags(doc.hash_md5, set())
 
     def test_tag_freq(self):
         self.test_add_doc_txt()

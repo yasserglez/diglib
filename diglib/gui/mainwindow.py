@@ -305,12 +305,23 @@ class MainWindow(XMLWidget):
         tag = checkmenuitem.get_label()
         docs = [self._library.get_doc(hash_md5) 
                 for hash_md5 in self._iter_selected_docs()]
-        for doc in docs:
-            if checkmenuitem.get_active():
-                doc.tags.add(tag)
-            else:
-                doc.tags.discard(tag)
-            self._library.update_tags(doc.hash_md5, doc.tags)
+        try:
+            for doc in docs:
+                if checkmenuitem.get_active():
+                    doc.tags.add(tag)
+                else:
+                    doc.tags.discard(tag)
+                self._library.update_tags(doc.hash_md5, doc.tags)
+        except error.DocumentNotRetrievable:
+            message = 'Could not remove the tag "%s".' % tag
+            secondary_text = 'If the tag is removed from one of the ' \
+                'selected documents it could not be retrieved.'
+            dialog = gtk.MessageDialog(self._main_window,
+                                       gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR,
+                                       gtk.BUTTONS_OK, message)
+            dialog.format_secondary_text(secondary_text)
+            dialog.run()
+            dialog.destroy()
         self._update_tags_treeview()
 
     def on_icons_size_menuitem_toggled(self, radiomenuitem, new_size):

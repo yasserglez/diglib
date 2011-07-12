@@ -89,7 +89,7 @@ class DigitalLibrary(object):
     # A document should satisfy at least one of the following conditions
     # to be considered retrievable. This should be an invariant for all
     # documents in the database.
-    MIN_TAGS = 3
+    MIN_TAGS = 1
     MIN_TERMS = 100
 
     def __init__(self, library_dir, index_class, database_class):
@@ -146,7 +146,8 @@ class DigitalLibrary(object):
                        doc_size, thumbnail_path, language_code, tags)
         self._index.add_doc(doc, content, metadata) # To know the number of terms.
         # Check if the document can be retrieved with the available information.
-        if not self._is_retrievable(doc):
+        if not (len(doc.tags) >= self.MIN_TAGS or
+                self._index.get_doc_terms_count(doc.hash_md5) >= self.MIN_TERMS):            
             self._index.delete_doc(hash_md5)
             raise error.DocumentNotRetrievable()
         self._database.add_doc(doc)
@@ -201,8 +202,12 @@ class DigitalLibrary(object):
 
     def update_tags(self, hash_md5, tags):
         tags = set([self._normalize_tag(tag) for tag in tags])
-        self._database.update_tags(hash_md5, tags)
-        self._index.update_tags(hash_md5, tags)
+        if not (len(tags) >= self.MIN_TAGS or
+                self._index.get_doc_terms_count(hash_md5) >= self.MIN_TERMS):        
+            raise error.DocumentNotRetrievable()
+        else:
+            self._database.update_tags(hash_md5, tags)
+            self._index.update_tags(hash_md5, tags)
 
     def delete_tag(self, tag):
         tag = self._normalize_tag(tag)
@@ -235,11 +240,6 @@ class DigitalLibrary(object):
             score = ssdeep.compare(hash_ssdeep, doc.hash_ssdeep)
             if score >= self.SSDEEP_THRESHOLD:
                 raise error.DocumentDuplicatedSimilar()
-
-    # Check if the document can be retrieved with the available information.
-    def _is_retrievable(self, doc):
-        return (len(doc.tags) >= self.MIN_TAGS or
-                self._index.get_doc_terms_count(doc.hash_md5) >= self.MIN_TERMS)
 
     def _normalize_tag(self, tag):
         return tag.strip().lower()
