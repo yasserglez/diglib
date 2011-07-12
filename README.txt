@@ -5,4 +5,6 @@ python-cairo
 python-magic
 python-sqlalchemy
 python-xapian
-ssdeep (http://bitbucket.org/denis/ssdeep)
+python-imaging
+python-djvu
+ssdeep for Python (http://bitbucket.org/denis/ssdeep)

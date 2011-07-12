@@ -22,10 +22,13 @@ import shutil
 import subprocess
 import codecs
 import cStringIO
+import time
 
 import cairo
 import poppler
 import magic
+import djvu.decode
+import PIL.Image
 
 
 # File handlers used to extract information from the different document formats
@@ -59,7 +62,7 @@ class FileHandler(object):
 
     # Close opened resources. The default implementation does nothing.
     def close(self):
-        pass
+        raise NotImplementedError()
 
 
 class PlainTextHandler(FileHandler):
@@ -78,11 +81,8 @@ class PlainTextHandler(FileHandler):
 
     def get_content(self):
         self._file.seek(0)
-        file = cStringIO.StringIO()
-        shutil.copyfileobj(self._file, file)
-        data = file.getvalue()
-        file.close()
-        return data
+        content = self._file.read()
+        return content
 
     def close(self):
         self._file.close()
@@ -94,67 +94,100 @@ class PDFHandler(FileHandler):
 
     def __init__(self, file_path):
         super(PDFHandler, self).__init__(file_path)
-        self._document = \
-            poppler.document_new_from_file('file://' + file_path, None)
+        self._document =  poppler.document_new_from_file('file://%s' % file_path, None)
+        self._page = self._document.get_page(0)
+        self._page_width, self._page_height = self._page.get_size()
 
     def get_metadata(self):
-        file = None
+        metadata = ''
         for name in ('title', 'keywords'):
             value = self._document.get_property(name)
             if value:
-                if file is None:
-                    file = cStringIO.StringIO()
-                file.write(value.encode('utf8') + ' ')
-        if file:
-            metadata = file.getvalue()
-            file.close()
-            return metadata
-        else:
-            return ''
+                metadata += value.encode('utf8') + ' '
+        return metadata
 
     def get_thumbnail(self, width, height):
-        file = None
-        if self._document.get_n_pages() > 0:
-            page = self._document.get_page(0)
-            page_width, page_height = page.get_size() 
-            if page_width > page_height:
-                scale = width / page_width
-            else:
-                scale = height / page_height
-            image_width = int(scale * page_width)
-            image_height = int(scale * page_height)
-            surface = cairo.ImageSurface(cairo.FORMAT_RGB24, image_width, image_height)
-            context = cairo.Context(surface)
-            context.scale(scale, scale)
-            context.set_source_rgb(1.0, 1.0, 1.0)
-            context.rectangle(0.0, 0.0, page_width, page_height)
-            context.fill()
-            page.render(context)
-            file = cStringIO.StringIO()
-            surface.write_to_png(file)
-        if file:
-            thumbnail = file.getvalue()
-            file.close()
-            return thumbnail
-        else:
-            return ''
+        scale = (width / float(self._page_width)
+                 if self._page_width > self._page_height
+                 else height / float(self._page_height))
+        image_width = int(scale * self._page_width)
+        image_height = int(scale * self._page_height)
+        surface = cairo.ImageSurface(cairo.FORMAT_RGB24, image_width, image_height)
+        context = cairo.Context(surface)
+        context.scale(scale, scale)
+        context.set_source_rgb(1.0, 1.0, 1.0)
+        context.rectangle(0.0, 0.0, self._page_width, self._page_height)
+        context.fill()
+        self._page.render(context)
+        file = cStringIO.StringIO()
+        surface.write_to_png(file)
+        thumbnail = file.getvalue()
+        file.close()
+        return thumbnail
 
     def get_content(self):
-        file = None
-        args = ['/usr/bin/pdftotext', self._file_path, '-']
+        args = ['pdftotext', self._file_path, '-']
         output = codecs.EncodedFile(os.tmpfile(), 'utf8', errors='ignore')
         return_code = subprocess.call(args=args, stdout=output)
+        content = ''
         if return_code == 0:
             output.seek(0)
-            file = cStringIO.StringIO()
-            shutil.copyfileobj(output, file)
+            content = output.read()
             output.close()
-        if file:
-            content = file.getvalue()
-            file.close()
-            return content
-        else:
-            return ''
+        return content
+
+    def close(self):
+        self._document = None
+
+
+class DJVUHandler(FileHandler):
+
+    mime_type = 'image/vnd.djvu'
+
+    def __init__(self, file_path):
+        super(DJVUHandler, self).__init__(file_path)
+        self._pixel_format = djvu.decode.PixelFormatRgb()
+        self._pixel_format.rows_top_to_bottom = True
+        self._pixel_format.y_top_to_bottom = True  
+        self._context = djvu.decode.Context()
+        self._document = self._context.new_document(djvu.decode.FileUri(self._file_path))
+        self._page_job = self._document.pages[0].decode(wait=True)
+
+    def get_metadata(self):
+        return ''
+
+    def get_thumbnail(self, width, height):
+        data = self._page_job.render(
+            djvu.decode.RENDER_COLOR,
+            (0, 0, self._page_job.width, self._page_job.height),
+            (0, 0, self._page_job.width, self._page_job.height),
+            self._pixel_format)
+        page_size = (self._page_job.width, self._page_job.height)
+        thumbnail_size = (width, height)
+        image = PIL.Image.fromstring('RGB', page_size, data)
+        image.thumbnail(thumbnail_size, PIL.Image.ANTIALIAS)
+        file = cStringIO.StringIO()
+        image.save(file, 'PNG')
+        thumbnail = file.getvalue()
+        file.close()
+        return thumbnail
+
+    def get_content(self):
+        args = ['djvutxt', self._file_path]
+        output = codecs.EncodedFile(os.tmpfile(), 'utf8', errors='ignore')
+        return_code = subprocess.call(args=args, stdout=output)
+        content = ''
+        if return_code == 0:
+            output.seek(0)
+            content = output.read()
+            output.close()
+        return content
+
+    def close(self):
+        self._pixel_format = None
+        self._context = None
+        self._document = None
+        self._page_job = None
 
 
 _HANDLERS = dict([(handler.mime_type, handler)
@@ -175,16 +208,16 @@ if __name__ == '__main__':
     handler = get_handler(file_path, mime_type)
     with codecs.open('mime_type.txt', encoding='utf8', mode='wt') as file:
         file.write(handler.mime_type)
-    file = handler.get_metadata()
-    if file:
-        with codecs.open('file.txt', encoding='utf8', mode='wt') as file:
-            file.write(file.getvalue())
-    file = handler.get_thumbnail(256, 256)
-    if file:
-        with open('file.png', mode='wb') as file:
-            shutil.copyfileobj(file, file)
-    file = handler.get_content()
-    if file:
-        with codecs.open('file.txt', encoding='utf8', mode='wt') as file:
-            file.write(file.getvalue())
+    metadata = handler.get_metadata()
+    if metadata:
+        with codecs.open('metadata.txt', encoding='utf8', mode='wt') as file:
+            file.write(metadata)
+    thumbnail = handler.get_thumbnail(512, 512)
+    if thumbnail:
+        with open('thumbnail.png', mode='wb') as file:
+            file.write(thumbnail)
+    content = handler.get_content()
+    if content:
+        with codecs.open('content.txt', encoding='utf8', mode='wt') as file:
+            file.write(content)
     handler.close()

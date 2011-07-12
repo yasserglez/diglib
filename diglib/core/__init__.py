@@ -74,7 +74,8 @@ class DigitalLibrary(object):
     # Supported MIME types.
     MIME_TYPES = {
         'text/plain': '.txt',
-        'application/pdf': '.pdf'
+        'application/pdf': '.pdf',
+        'image/vnd.djvu': '.djvu',
     }
 
     # Dimensions of the thumbnails of the documents.

@@ -39,7 +39,7 @@ class TestDigitalLibrary(unittest.TestCase):
 
     def test_add_doc_txt(self):
         txt_path = os.path.join(self._test_dir, 'es.txt')
-        tags = set(['vine', 'copula', 'veda'])
+        tags = set(['a', 'b', 'c'])
         doc = self._library.add_doc(txt_path, tags)
         self.assertEqual(doc.mime_type, 'text/plain')
         self.assertEqual(doc.small_thumbnail_abspath, None)
@@ -53,10 +53,23 @@ class TestDigitalLibrary(unittest.TestCase):
 
     def test_add_doc_pdf(self):
         pdf_path = os.path.join(self._test_dir, 'en.pdf')
-        tags = set(['veda']) # Only one tag to force to check if this doc
-                             # can be retrieved using the information in the index.
+        tags = set(['a', 'b'])
         doc = self._library.add_doc(pdf_path, tags)
         self.assertEqual(doc.mime_type, 'application/pdf')
+        self.assertNotEqual(doc.small_thumbnail_abspath, None)
+        self.assertNotEqual(doc.normal_thumbnail_abspath, None)
+        self.assertNotEqual(doc.large_thumbnail_abspath, None)
+        self.assertEqual(doc.language_code, 'en')
+        self.assertSetEqual(doc.tags, tags)
+        other_doc = self._library.get_doc(doc.hash_md5)
+        self._assert_docs_equal(doc, other_doc)
+        return doc
+
+    def test_add_doc_djvu(self):
+        djvu_path = os.path.join(self._test_dir, 'en.djvu')
+        tags = set('a')
+        doc = self._library.add_doc(djvu_path, tags)
+        self.assertEqual(doc.mime_type, 'image/vnd.djvu')
         self.assertNotEqual(doc.small_thumbnail_abspath, None)
         self.assertNotEqual(doc.normal_thumbnail_abspath, None)
         self.assertNotEqual(doc.large_thumbnail_abspath, None)
@@ -69,10 +82,13 @@ class TestDigitalLibrary(unittest.TestCase):
     def test_add_doc_all(self):
         txt_doc = self.test_add_doc_txt()
         pdf_doc = self.test_add_doc_pdf()
+        djvu_doc = self.test_add_doc_djvu()
         other_txt_doc = self._library.get_doc(txt_doc.hash_md5)
         other_pdf_doc = self._library.get_doc(pdf_doc.hash_md5)
+        other_djvu_doc = self._library.get_doc(djvu_doc.hash_md5)
         self._assert_docs_equal(txt_doc, other_txt_doc)
         self._assert_docs_equal(pdf_doc, other_pdf_doc)
+        self._assert_docs_equal(djvu_doc, other_djvu_doc)
         
     def test_add_doc_exact_duplicate(self):
         with self.assertRaises(error.DocumentDuplicatedExact):
@@ -83,7 +99,7 @@ class TestDigitalLibrary(unittest.TestCase):
         with self.assertRaises(error.DocumentDuplicatedSimilar):
             self.test_add_doc_txt()
             similar_path = os.path.join(self._test_dir, 'similar.txt')
-            self._library.add_doc(similar_path, set(['vine', 'copula', 'veda']))
+            self._library.add_doc(similar_path, set(['a', 'b', 'c']))
 
     def test_add_doc_not_retrievable(self):
         with self.assertRaises(error.DocumentNotRetrievable):
@@ -107,13 +123,14 @@ class TestDigitalLibrary(unittest.TestCase):
 
     def test_get_all_tags(self):
         self.assertSetEqual(self._library.get_all_tags(), set())
+        self._library.add_tag('a')
+        self._library.add_tag('b')
+        self._library.add_tag('c')
+        self.assertSetEqual(self._library.get_all_tags(), set('abc'))
 
     def test_add_tag(self):
         self._library.add_tag('a')
         self.assertSetEqual(self._library.get_all_tags(), set('a'))
-        self._library.add_tag('b')
-        self._library.add_tag('c')
-        self.assertSetEqual(self._library.get_all_tags(), set('abc'))
 
     def test_add_tag_duplicated(self):
         self._library.add_tag('a')
@@ -128,10 +145,10 @@ class TestDigitalLibrary(unittest.TestCase):
         
     def test_delete_tag_assigned(self):
         original = self.test_add_doc_txt()
-        self._library.delete_tag('veda')
+        self._library.delete_tag('c')
         modified = self._library.get_doc(original.hash_md5)
-        self.assertSetEqual(modified.tags, set(['vine', 'copula']))
-        self.assertListEqual(self._library.search('', set(['veda'])), [])
+        self.assertSetEqual(modified.tags, set(['a', 'b']))
+        self.assertListEqual(self._library.search('', set(['c'])), [])
 
     def test_delete_tag_not_retrievable(self):
         doc_path = os.path.join(self._test_dir, 'not-retrievable.txt')
@@ -146,11 +163,11 @@ class TestDigitalLibrary(unittest.TestCase):
 
     def test_rename_tag_assigned(self):
         original = self.test_add_doc_txt()
-        self._library.rename_tag('veda', 'a')
+        self._library.rename_tag('c', 'z')
         modified = self._library.get_doc(original.hash_md5)
-        self.assertSetEqual(modified.tags, set(['vine', 'copula', 'a']))
-        self.assertListEqual(self._library.search('', set(['veda'])), [])
-        self.assertListEqual(self._library.search('', set(['a'])), [original.hash_md5])
+        self.assertSetEqual(modified.tags, set(['a', 'b', 'z']))
+        self.assertListEqual(self._library.search('', set(['c'])), [])
+        self.assertListEqual(self._library.search('', set(['z'])), [original.hash_md5])
         
     def test_rename_tag_duplicated(self):
         self._library.add_tag('a')
@@ -160,9 +177,9 @@ class TestDigitalLibrary(unittest.TestCase):
 
     def test_update_tags(self):
         doc = self.test_add_doc_txt()
-        self.assertListEqual(self._library.search('', set('abc')), [])
-        self._library.update_tags(doc.hash_md5, set('abc'))
-        self.assertListEqual(self._library.search('', set('abc')), [doc.hash_md5])
+        self.assertListEqual(self._library.search('', set('xyz')), [])
+        self._library.update_tags(doc.hash_md5, set('xyz'))
+        self.assertListEqual(self._library.search('', set('xyz')), [doc.hash_md5])
 
     def test_update_tags_not_retrievable(self):
         doc_path = os.path.join(self._test_dir, 'not-retrievable.txt')
@@ -170,22 +187,23 @@ class TestDigitalLibrary(unittest.TestCase):
         with self.assertRaises(error.DocumentNotRetrievable):
             self._library.update_tags(doc.hash_md5, set())
 
-    def test_tag_freq(self):
+    def test_get_tag_freq(self):
         self.test_add_doc_txt()
         self.test_add_doc_pdf()
-        self._library.add_tag('a')
-        self.assertEqual(self._library.get_tag_freq('a'), 0.0)
-        self.assertEqual(self._library.get_tag_freq('vine'), 0.5)
-        self.assertEqual(self._library.get_tag_freq('copula'), 0.5)
-        self.assertEqual(self._library.get_tag_freq('veda'), 1.0)
+        self.test_add_doc_djvu()
+        self._library.add_tag('d')
+        self.assertEqual(self._library.get_tag_freq('d'), 0.0)
+        self.assertEqual(self._library.get_tag_freq('c'), 1.0/3.0)
+        self.assertEqual(self._library.get_tag_freq('b'), 2.0/3.0)
+        self.assertEqual(self._library.get_tag_freq('a'), 1.0)
 
     def test_search_empty(self):
         self.assertListEqual(self._library.search('foo bar', set()), [])
-        self.assertListEqual(self._library.search('foo bar', set(['veda'])), [])
+        self.assertListEqual(self._library.search('foo bar', set(['c'])), [])
         self.test_add_doc_txt()
         self.test_add_doc_pdf()
         self.assertListEqual(self._library.search('foo bar', set()), [])
-        self.assertListEqual(self._library.search('foo bar', set(['veda'])), [])
+        self.assertListEqual(self._library.search('foo bar', set(['c'])), [])
 
     def test_search_all(self):
         self.assertListEqual(self._library.search('', set()), [])
@@ -204,7 +222,7 @@ class TestDigitalLibrary(unittest.TestCase):
     def test_search_filtered(self):
         txt_doc = self.test_add_doc_txt()
         self.test_add_doc_pdf()
-        results = self._library.search('+VEDA evolutionary optimization', set(['vine', 'copula', 'veda']))
+        results = self._library.search('+VEDA evolutionary optimization', set(['a', 'b', 'c']))
         self.assertListEqual(results, [txt_doc.hash_md5])
         
     def _assert_docs_equal(self, x, y):
