@@ -1,0 +1,3 @@
+include *.txt MANIFEST.in
+recursive-include tests *.py *.txt *.djvu *.pdf *.ps
+include packages/diglib/gui/diglib.desktop

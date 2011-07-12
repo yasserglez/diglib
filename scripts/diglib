@@ -18,11 +18,14 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
+
+# Allow running this script in source directory.
+src_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir)
+if os.path.isfile(os.path.join(src_dir, 'setup.py')):
+    sys.path.insert(0, os.path.normpath(os.path.join(src_dir, 'packages')))
 
 import diglib
 
-
-if __name__ == '__main__':
-    # TODO: Parse command line arguments.
-    library_dir = os.path.expanduser('~/.diglib/')
-    diglib.main(library_dir)
+# TODO: Parse command line arguments.
+diglib.main(os.path.expanduser('~/.diglib/'))

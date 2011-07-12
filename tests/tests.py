@@ -18,8 +18,14 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
 import shutil
 import unittest
+
+# Allow running this script in source directory.
+src_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir)
+if os.path.isfile(os.path.join(src_dir, 'setup.py')):
+    sys.path.insert(0, os.path.normpath(os.path.join(src_dir, 'packages')))
 
 from diglib.core import DigitalLibrary, error
 from diglib.core.index import XapianIndex
@@ -29,8 +35,8 @@ from diglib.core.database import SQLAlchemyDatabase
 class TestDigitalLibrary(unittest.TestCase):
 
     def setUp(self):
-        self._test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test')
-        self._library_dir = os.path.join(self._test_dir, 'data')
+        self._tests_dir = os.path.dirname(os.path.abspath(__file__))
+        self._library_dir = os.path.join(self._tests_dir, 'data')
         self._library = DigitalLibrary(self._library_dir, XapianIndex, SQLAlchemyDatabase)
 
     def tearDown(self):
@@ -38,7 +44,7 @@ class TestDigitalLibrary(unittest.TestCase):
         shutil.rmtree(self._library_dir)
         
     def test_add_doc_ps(self):
-        ps_path = os.path.join(self._test_dir, 'en.ps')
+        ps_path = os.path.join(self._tests_dir, 'en.ps')
         tags = set('abcd')
         doc = self._library.add_doc(ps_path, tags)
         self.assertEqual(doc.mime_type, 'application/postscript')
@@ -52,7 +58,7 @@ class TestDigitalLibrary(unittest.TestCase):
         return doc
 
     def test_add_doc_txt(self):
-        txt_path = os.path.join(self._test_dir, 'es.txt')
+        txt_path = os.path.join(self._tests_dir, 'es.txt')
         tags = set('abc')
         doc = self._library.add_doc(txt_path, tags)
         self.assertEqual(doc.mime_type, 'text/plain')
@@ -66,7 +72,7 @@ class TestDigitalLibrary(unittest.TestCase):
         return doc
 
     def test_add_doc_pdf(self):
-        pdf_path = os.path.join(self._test_dir, 'en.pdf')
+        pdf_path = os.path.join(self._tests_dir, 'en.pdf')
         tags = set('ab')
         doc = self._library.add_doc(pdf_path, tags)
         self.assertEqual(doc.mime_type, 'application/pdf')
@@ -80,7 +86,7 @@ class TestDigitalLibrary(unittest.TestCase):
         return doc
 
     def test_add_doc_djvu(self):
-        djvu_path = os.path.join(self._test_dir, 'en.djvu')
+        djvu_path = os.path.join(self._tests_dir, 'en.djvu')
         tags = set('a')
         doc = self._library.add_doc(djvu_path, tags)
         self.assertEqual(doc.mime_type, 'image/vnd.djvu')
@@ -115,12 +121,12 @@ class TestDigitalLibrary(unittest.TestCase):
     def test_add_doc_similar_duplicate(self):
         with self.assertRaises(error.DocumentDuplicatedSimilar):
             self.test_add_doc_txt()
-            similar_path = os.path.join(self._test_dir, 'similar.txt')
+            similar_path = os.path.join(self._tests_dir, 'similar.txt')
             self._library.add_doc(similar_path, set('abc'))
 
     def test_add_doc_not_retrievable(self):
         with self.assertRaises(error.DocumentNotRetrievable):
-            doc_path = os.path.join(self._test_dir, 'not-retrievable.txt')
+            doc_path = os.path.join(self._tests_dir, 'not-retrievable.txt')
             self._library.add_doc(doc_path, set())
 
     def test_get_doc_not_found(self):
@@ -168,7 +174,7 @@ class TestDigitalLibrary(unittest.TestCase):
         self.assertListEqual(self._library.search('', set('c')), [])
 
     def test_delete_tag_not_retrievable(self):
-        doc_path = os.path.join(self._test_dir, 'not-retrievable.txt')
+        doc_path = os.path.join(self._tests_dir, 'not-retrievable.txt')
         self._library.add_doc(doc_path, set('a'))
         with self.assertRaises(error.DocumentNotRetrievable):
             self._library.delete_tag('a')
@@ -199,7 +205,7 @@ class TestDigitalLibrary(unittest.TestCase):
         self.assertListEqual(self._library.search('', set('xyz')), [doc.hash_md5])
 
     def test_update_tags_not_retrievable(self):
-        doc_path = os.path.join(self._test_dir, 'not-retrievable.txt')
+        doc_path = os.path.join(self._tests_dir, 'not-retrievable.txt')
         doc = self._library.add_doc(doc_path, set('abc'))
         with self.assertRaises(error.DocumentNotRetrievable):
             self._library.update_tags(doc.hash_md5, set())
