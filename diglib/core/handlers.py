@@ -18,11 +18,9 @@
 
 import os
 import sys
-import shutil
 import subprocess
 import codecs
 import cStringIO
-import time
 
 import cairo
 import poppler
@@ -82,7 +80,7 @@ class PlainTextHandler(FileHandler):
     def get_content(self):
         self._file.seek(0)
         content = self._file.read()
-        return content
+        return content.strip()
 
     def close(self):
         self._file.close()
@@ -104,7 +102,7 @@ class PDFHandler(FileHandler):
             value = self._document.get_property(name)
             if value:
                 metadata += value.encode('utf8') + ' '
-        return metadata
+        return metadata.strip()
 
     def get_thumbnail(self, width, height):
         scale = (width / float(self._page_width)
@@ -134,7 +132,7 @@ class PDFHandler(FileHandler):
             output.seek(0)
             content = output.read()
             output.close()
-        return content
+        return content.strip()
 
     def close(self):
         self._document = None
@@ -181,13 +179,50 @@ class DJVUHandler(FileHandler):
             output.seek(0)
             content = output.read()
             output.close()
-        return content
+        return content.strip()
 
     def close(self):
         self._pixel_format = None
         self._context = None
         self._document = None
         self._page_job = None
+
+
+class PSHandler(FileHandler):
+
+    mime_type = 'application/postscript'
+
+    def __init__(self, file_path):
+        super(PSHandler, self).__init__(file_path)
+
+    def get_metadata(self):
+        return ''
+
+    def get_thumbnail(self, width, height):
+        args = ['convert', '%s[0]' % self._file_path,
+                '-thumbnail', '%sx%s' % (width, height), 'png:-']
+        output = os.tmpfile()
+        return_code = subprocess.call(args=args, stdout=output)
+        thumbnail = ''
+        if return_code == 0:
+            output.seek(0)
+            thumbnail = output.read()
+            output.close()
+        return thumbnail
+
+    def get_content(self):
+        args = ['ps2txt', self._file_path]
+        output = codecs.EncodedFile(os.tmpfile(), 'utf8', errors='ignore')
+        return_code = subprocess.call(args=args, stdout=output)
+        content = ''
+        if return_code == 0:
+            output.seek(0)
+            content = output.read()
+            output.close()
+        return content.strip()
+    
+    def close(self):
+        pass
 
 
 _HANDLERS = dict([(handler.mime_type, handler)

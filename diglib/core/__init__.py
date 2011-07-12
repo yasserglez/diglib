@@ -76,6 +76,7 @@ class DigitalLibrary(object):
         'text/plain': '.txt',
         'application/pdf': '.pdf',
         'image/vnd.djvu': '.djvu',
+        'application/postscript': '.ps',
     }
 
     # Dimensions of the thumbnails of the documents.

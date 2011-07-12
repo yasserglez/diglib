@@ -32,10 +32,13 @@ LANGUAGES = ('en', 'es', 'it', 'fr', 'de')
 
 
 def get_lang(text):
-    if isinstance(text, str):
-        text = unicode(text, 'utf-8')
-    text = _normalize(text)
-    return _check(text, _MODELS.keys())
+    if text:
+        if isinstance(text, str):
+            text = unicode(text, 'utf-8')
+        text = _normalize(text)
+        return _check(text, _MODELS.keys())
+    else:
+        return 'en' # English as default language.
 
 
 def get_stopwords(lang):

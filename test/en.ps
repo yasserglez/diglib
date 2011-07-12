@@ -1,0 +1,1031 @@
+%!PS-Adobe-3.0
+%%Title: DjVu PostScript document
+%%Copyright: Copyright (c) 1998-1999 AT&T
+%%Creator: DjVu (code by Andrei Erofeev)
+%%DocumentData: Clean7Bit
+%%CreationDate: Tue Jul 12 13:58:34 2011
+%%For: Yasser González-Fernández
+%%LanguageLevel: 3
+%%Pages: 1
+%%PageOrder: Ascend
+%%Requirements: color
+%%EndComments
+%%EndProlog
+
+%%BeginSetup
+/doc-origstate save def
+% -- procs for reading color image
+/readR () def
+/readG () def
+/readB () def
+/ReadData {
+   currentfile /ASCII85Decode filter dup
+   /RunLengthDecode filter
+   bufferR readstring pop /readR exch def
+   dup status { flushfile } { pop } ifelse
+   currentfile /ASCII85Decode filter dup
+   /RunLengthDecode filter
+   bufferG readstring pop /readG exch def
+   dup status { flushfile } { pop } ifelse
+   currentfile /ASCII85Decode filter dup
+   /RunLengthDecode filter
+   bufferB readstring pop /readB exch def
+   dup status { flushfile } { pop } ifelse
+} bind def
+/ReadR {
+   readR length 0 eq { ReadData } if
+   readR /readR () def
+} bind def
+/ReadG {
+   readG length 0 eq { ReadData } if
+   readG /readG () def
+} bind def
+/ReadB {
+   readB length 0 eq { ReadData } if
+   readB /readB () def
+} bind def
+% -- procs for foreground layer
+/g {gsave 0 0 0 0 5 index 5 index setcachedevice
+    true [1 0 0 1 0 0] 5 4 roll imagemask grestore
+} bind def
+/gn {gsave 0 0 0 0 6 index 6 index setcachedevice
+  true [1 0 0 1 0 0] 3 2 roll 5 1 roll 
+  { 1 sub 0 index 2 add 1 index  1 add roll
+  } imagemask grestore pop 
+} bind def
+/c {setcolor rmoveto glyphshow} bind def
+/s {rmoveto glyphshow} bind def
+/S {rmoveto gsave show grestore} bind def
+/F {(Helvetica) findfont exch scalefont setfont} bind def
+% -- emulations
+systemdict /rectstroke known not {
+  /rectstroke  % stack : x y width height 
+  { newpath 4 2 roll moveto 1 index 0 rlineto
+    0 exch rlineto neg 0 rlineto closepath stroke
+  } bind def } if
+systemdict /rectclip known not {
+  /rectclip  % stack : x y width height 
+  { newpath 4 2 roll moveto 1 index 0 rlineto
+    0 exch rlineto neg 0 rlineto closepath clip
+  } bind def } if
+% -- color space
+/DjVuColorSpace [ /CIEBasedABC
+<< /DecodeLMN [ { dup 0.03928 le {
+       12.92321 div
+     } {
+       0.055 add 1.055 div 2.4 exp
+     } ifelse } bind dup dup ]
+   /MatrixLMN [
+      0.412457 0.212673 0.019334
+      0.357576 0.715152 0.119192
+      0.180437 0.072175 0.950301 ]
+   /WhitePoint [ 0.9505 1 1.0890 ] % D65 
+   /BlackPoint[0 0 0] >> ] def
+%%EndSetup
+
+%%Page: 1 1
+/page-origstate save def
+% -- coordinate system
+/auto-orient true def
+/portrait false def
+/fit-page true def
+/zoom 0 def
+/image-dpi 300 def
+clippath pathbbox newpath
+2 index sub exch 3 index sub
+/page-width exch def
+/page-height exch def
+/page-y exch def
+/page-x exch def
+/image-x 0 def
+/image-y 0 def
+/image-width  2550 def
+/image-height 3300 def
+/margin 0 def
+/halign 0 def
+/valign 0 def
+% -- position page
+auto-orient {
+  image-height image-width sub
+  page-height page-width sub
+  mul 0 ge /portrait exch def
+} if
+fit-page {
+  /page-width page-width margin sub
+     halign 0 eq { margin sub } if def
+  /page-height page-height margin sub
+     valign 0 eq { margin sub } if def
+  /page-x page-x halign 0 ge { margin add } if def
+  /page-y page-y valign 0 ge { margin add } if def
+} if
+portrait {
+  fit-page {
+    image-height page-height div
+    image-width page-width div
+    gt {
+      page-height image-height div /coeff exch def
+    } {
+      page-width image-width div /coeff exch def
+    } ifelse
+  } {
+    /coeff 72 image-dpi div zoom mul 100 div def
+  } ifelse
+  /start-x page-x page-width image-width
+    coeff mul sub 2 div halign 1 add mul add def
+  /start-y page-y page-height image-height
+    coeff mul sub 2 div valign 1 add mul add def
+  /a11 coeff def
+  /a12 0 def
+  /a13 start-x def
+  /a21 0 def
+  /a22 coeff def
+  /a23 start-y def
+} { % landscape
+  fit-page {
+    image-height page-width div
+    image-width page-height div
+    gt {
+      page-width image-height div /coeff exch def
+    } {
+      page-height image-width div /coeff exch def
+    } ifelse
+  } {
+    /coeff 72 image-dpi div zoom mul 100 div def
+  } ifelse
+  /start-x page-x page-width add page-width image-height
+    coeff mul sub 2 div valign 1 add mul sub def
+  /start-y page-y page-height image-width
+    coeff mul sub 2 div halign 1 add mul add def
+  /a11 0 def
+  /a12 coeff neg def
+  /a13 start-x image-y coeff neg mul sub def
+  /a21 coeff def
+  /a22 0 def
+  /a23 start-y image-x coeff mul add def 
+} ifelse
+[a11 a21 a12 a22 a13 a23] concat
+gsave 0 0 image-width image-height rectclip
+% -- begin print
+% --- now doing the background
+% --- now doing the foreground
+gsave DjVuColorSpace setcolorspace
+/$DjVuLocalFont 7 dict def
+$DjVuLocalFont begin
+/FontType 3 def 
+/FontMatrix [1 0 0 1 0 0] def
+/FontBBox [0 0 1 .5] def
+/CharStrings 39 dict def
+/Encoding 2 array def
+0 1 1 {Encoding exch /.notdef put} for 
+CharStrings begin
+/.notdef {} def
+/0 {<~s54"Zn3=\hs1f*E!'^Gf!!#1_#64aQ!!<3$IK0HM!.4bKJ,oKI!It1J!!0k8p](?1!VcWps8VQg
+!<<)g!!%NKn,NGr"5j.Z?j#<e!&+Yn!!"\X^]4?g#J^<>(_;,s!#Q5s!!!EL!!!!-*rl9@$m,HL
+!!YUe!!!3e!!!!'4obQ_"+1(K!!@TK!!!&p!!!!"p](9o!VcWp!!)Kg!!~>  36 33 g} def
+/1 {<~#QK;rs54pun/_RS*WUR/!'D;&4<=Jd*WSAF!$30]*Zb;&*WR6&!$30]*Zb;F*WSAF!'D;&Hl`94
+*s)-Ys6q(Z^`EUY*WQ0]!!"&?!$2+?*WQ0]!!"&?!$2+?*WQ1h!!)uu!!~>  23 35 g} def
+/2 {<~J+3I8i#]ZT^^e-j!"T&O!'UC3"8j895Oa/QquHKln,VqXn-&4hGRQc`+8c.i~>  16 24 g} def
+/3 {<~#P\i-%tG/j*rmA_*rmA_*rmA_*rmA_*rmA_*rmA_*rmA_*rmA_*ru?95PP`h%fch7#64i+~>  14 28 g} def
+/4 {<~s56*A*WR5]*WR5]*WR5]*WR5]*WR5]*WR5]*WR5]*WR5_*WdF<+9"HQrZ2%@~>  15 24 g} def
+/5 {<~5KE8CpV?\kJFF)"n-=L5#Cu:KJFEeon-=L5#Cq%(J3Sg>&-%.[#CldZJ,fh)!!e#S#CnK=J1qK6
+3"H!R4odhF!!~>  20 23 g} def
+/6 {<~"93l^s54uL?p4PjHiO.k!!%6D!;HNon,NIX!!)Kg!:Tsgn,NIX!!)Kg!;HNoGQ:!R!5Ns^^cVV4
+*WWtdcbKY_^]6%g~>  19 24 g} def
+/7 {<~!WW&t!<;Ng!"XS[!"XS[!"XS[!"XS[!"XS[!"XS[!"XS[!"XS[!"XS[!"XS[!"XS[!"XS[!"XS[
+!"XS[!"XS[!"XS[!"XS[!"XS[!"XS[!"XS[!"XS[!"XS[!"XS[^^kr4^^kr4^^kr4^^kr4^^krT
+r""GTs8W,os8W,o~>  29 33 g} def
+/8 {<~J)gPNJG]oXHk-4)%fgtf!.5:WHk-4)%fgtf!.5:WHk-4)%fgtf!.5:WHk-4)%fgtf!.5:WGRje!
+&)m9oJ+*sji"#hg%fcS?!!!N0!"T&0%fcS?!!!N0!"T&0%fcTZ!!*$!!!~>  24 35 g} def
+/9 {<~s6q+\%fd+?%fd+?%fd+?%fd+?%fd+?%fd+?%fd+?%fd+?%fd+?%fd[OIfK~>  12 23 g} def
+/10 {<~E;95'Du~>  5 5 g} def
+/11 {<~!&t"p!!"tZ^]4?o!Pe[8Hir:,!.4n,!!%HQn,NI^#I"1.p'7f%!V6hh!!2*j(]XTsT,7P1iL^MY
+"2UQ;!!C%9$igN_r!!-+JG]TO%tK$4!"T'S!rri33!0.&!&t(2*WRkpJ3SPa#JgAt!$C\~>  36 23 g} def
+/12 {<~#QFc7hgcaM^cVYUGQI;Y!:Y45nG!"Yn,W7Q!-mu5Gjk]Xn,R_&!-mu5Gk_:6p]0f.!:Y45n2pa0
+*Ws1gT7@1H!!",A~>  21 24 g} def
+/13 {<~s2"_"!;ml<p`9G)*WbaO"5k4&^`E`r*tNlDNrU8o!$;+>*e")149-E>!$2OK*Y&/k#65eIJ0"a,
+*WY+>!;IT;rZ2%>*WQ0]!!"&?!$2+?*WQ0]!!"&?!$2+?*WQ3>!!)uu!!~>  24 35 g} def
+/14 {<~s53nWhuFeu!$2+?*WQ0]!!"&?!$2+?*WQ0]!!"&?!$D5k+4%_D!T5"!n/_T)*WUF+!-fObHl`98
+*WS;D!'D;&4<=Jb*WS;D!.5gfHl`94*WUF+!;IT9n/hc%5QB[@s*t(T!!~>  22 35 g} def
+/15 {<~#QFcGs1gi!^ch_uHiO.k!!)co!;HNon,NIX!!)Kg!:Tsgs8Tn("2OC._!hHAp]J<V"2K-`^cVjP
+4qE/c^AnN:!!$C,~>  18 24 g} def
+/16 {<~s2Y+'!Vd]9n/_T!*WY[N!:V$0n/_T!*WY[N!:V$0n/_T!*WY[N!:V$0n/_T!*WY[N!:V$0n/_W"
++2dS3s5<l@^]4E9~>  23 24 g} def
+/17 {<~#Pe9/s7d[kn/_T!*WY[N!:V$0n/_T!*WY[N!:V$0n/_T!*WY[N!:V$0n/_T!*WY[N!:V$0n/_T!
+*WY\Y!V$'nn,~>  23 23 g} def
+/18 {<~s7ego*rmA_*rmA_*rmA_*rmA_*rmA_*rmA_*rmA_*rmA_*rmA_*ru?=J,CAg*rmA_%fd+?%fd+?
+%gE7C"-*K_!<)~>  15 35 g} def
+/19 {<~s6q+\%fd+?%fd+?%fd+?%fd+?%fd+?%fd+?%fd+?%fd+?%fd+?%fd+?%fd+?%fd+?%fd+?%fd+?
+%fd+?%fh(Zrr<~>  12 35 g} def
+/20 {<~#Q4KArqJ\[n9b9+Hi`_]!V#jbnG!%Rn,`%J!V#RZnF-JJn,`%J!V#RZnG!%Rp]9l/!UtI;n2pa@
+*Wba@cgV2>n,OU#!!)Kg!:Tshn,NLY!!2Qh!Up'in,NLY!!2Qh&+BQ0n,~>  22 35 g} def
+/21 {<~!#tt=!#tt=!'UA_!'UA_!'UA_!.OtK!.+\G!;V-F!:bR>!V*r*!V!l)"5r);"5mPe"2J:E#J`"n
+#CnK.%tHV>%tGJs*rm8\*rl]L4obukIt/R?s5<p-~>  25 23 g} def
+/22 {<~s8W,W5QCcA#Clj5#Clg4#Clg4#Cle^#Cle^#Cle^#Cle^#CldS#CldS#CldS#CmWk#CmWk#Cnc6
+#Cnc6#QOQ!#QOQ!#Cnc6#CmWk#CmWk#CmWk#CldS#CldS#CldS#Cli*#Cli*#Cli*#Cli*#Cli*
+#Cq;Ss8W+Ls8W+L~>  27 33 g} def
+/23 {<~s2Y-]pcefW#N-X'p]J;Q!;HZ3*WYs;^`ELN"2GrXp]J;Q!;HZ3*WYs;^`ELN"2GrXp]J;Q!;HZ3
+*WYs;^`ELN"2GrXp]J;Q!;HZ3*WYs;^`ELN"2GrXn,pHI!Up?0+6WZrJ3O"rs+()5_>aK8!WWK+~>  37 24 g} def
+/24 {<~s8Vus!'gM`J,fh)&)[EmJ-#->#ClgL!!e#SHiOD%!'UAfJ,hb5#Cldr!!e#S*rlOr!$;1GJ,g+1
+#CldbJ-UT)%tFn8!"XSbJ,g+1#CldbJ-UT)%tFn8!"XSbJ,g+1#CldbJ-UT)++OTH!$;1GJ,gYk
+#Cle=!!e#S4obh<!.FnQJ,oKI#ClpO!!e#bn,N]Gs1eX7s8N'!s8V!W!!~>  33 33 g} def
+/25 {<~#Q+OO&,c>*%tJm)%fghS*rpNc*rpNc*rpNc*rpNc*rpNc*rpNc*rpNc*rpNc*rpNc*rpNc*rpNc
+*rpNc*rpNc*rpNk*rpNk*rpa,*rpfcs7lEb5Pt5#%fcS8%fcS0#64`(#64`(!rr<$~>  29 28 g} def
+/26 {<~!W2p>s+#P'i-57kn,R_&!''HJ4E(9_Du`![!'D5$Hk68P5QCM.s6tO<!-eJD2uipu!!!E-!!iK'
++9-jT#J`G(^jH1@GQH`I!T82'i-5:\GQH`M!T6'Bi'%7Y+.p=Rs53lbn,NGJ~>  22 36 g} def
+/27 {<~!#P]\!8mmn"+UUV%fd(>*WS;&49.JDHiSBkGQ;sgGQ@L=p]1'hp]1'hp]1'hp]1'hp],O=GQ;sg
+GQ<*k49.JD49-E&%KI">#64jV!Pe]n!-eJ\~>  13 44 g} def
+/28 {<~^]<9mGQ9i+*WQ]N#65!Z"2G#S"5j4<!T4"J!Up-Z!:U!X!:U!X!:U!X!:U!X!:U!X!:U!X!Up-Z
+!Up-J!T4":"2G#S#Cm$Z%fdXN490U+huLOm~>  12 44 g} def
+/29 {<~0RWfrI!>~>  6 6 g} def
+/30 {<~HiO0H!!*%L!5ZGN^q]r#huEab!!$s<!&+BQ0E;(i!!"tY!'C5]49,A/!!%HJ!<)rurr<&j!!2Zk
+!TAP2iID$h^^%Zj#Je+[JD^rg?k7d,*rmu:!&,Go3'I<ZIfOlr_>a~>  24 34 g} def
+/31 {<~s8V#,s588)i&gu^4od8Y!&+o`0Fr[F#J^<A^]4Jp!!2Qh!:Tsgp](;=!!%BH!'UBj*WTRi!+6=f
+E!LoCs1j-a^]~>  20 23 g} def
+/32 {<~!'gM!!<4/1"5j1K#J^=!%tFX>*rl:#4obR"4obR"HiO-`HiO-HHiO-Hp](9op](9op](9op](9o
+p](9op](9op](9op](9op](9op](9oHiO-HHiO-HHiO-H49,?]4obR:*WQ0o*rl9p%tFX6#J^=Y
+"8Duf!<<)g!$D4@~>  29 33 g} def
+/33 {<~#Q+P:&,^kV%tHbB%fe]l*rnD'*rnD'*rnD'*rnD'*rnD'*rnD'*rnD'*rnD'*rnD'*rnD'*rnD'
+*rnD'*rnD'*rnD'*rnD'*rnD'*rnD's7gsA5Pb3W%fcS0%fcS0#64`(#64`(!rr<$~>  26 28 g} def
+/34 {<~#Q+NCp^d<##N-,CGQZk7!-eV(*rpNfi#_rD"5k7$GQZkG!-eV(*rpNfi#_rD"5k7$GQZkG!-eV(
+*rpNfi#_rD"5k7$GQZkG!-eV(*rpNfi#_rD"5k7$GQY`'!-eU]*rpd$_#O1Vs+!?/GlIaS!-ebL
+%fghS!!`LK!!!6(GQ7^G!-eJD!!%6D!!!"D!!!!!GQ7^D!-eJD!!%6D!!!,r!!!!(p](9~>  37 35 g} def
+/35 {<~!!%NL!!!#7!!!!!^]4?7!T3qX!!2!X!!!,j!!!!$n,NFg#Oh]n!!h-V!!!8V!!!!0S,`Nh%u^Jg
+!$;[N!!")F!!!!`"onW'4pM&f!.G"M!!%BKJ,fRs!It.Mp]8/1!;HQ0!!2iphuEfI!8mhZn,Qhr
+"5j/u!!D-Z0E;@9!&sr`^]6=o&&8/b!"XS[)uq(2!"8iLJ,g&Zs7cToi;`QPs53~>  35 34 g} def
+/36 {<~s7lWhs7lWh~>  13 4 g} def
+/37 {<~s+C=k!;m6*p]^`f#6F;rJ`$Q]^];Ej!9\k4IfKI5!!"&?!'C5]IK0@s!!)lr!V([@iP5Q2^^%Y_
+%tH>U^j(A!rV~>  24 23 g} def
+end
+/BuildGlyph {
+  exch /CharStrings get exch
+  2 copy known not
+  {pop /.notdef} if
+  get exec 
+} bind def
+end
+/LocalDjVuFont $DjVuLocalFont definefont pop
+/LocalDjVuFont findfont setfont
+-0 -0 translate
+0 0 moveto
+/0 236 3018 s
+/1 36 0 s
+/2 27 0 s
+/3 18 0 s
+/4 15 0 s
+/5 17 0 s
+/6 22 0 s
+/3 21 0 s
+/7 -155 -115 s
+/8 30 0 s
+/9 26 0 s
+/10 3 28 s
+/2 11 -28 s
+/11 31 0 s
+/12 38 0 s
+/4 24 0 s
+/13 16 0 s
+/14 38 -11 s
+/4 25 11 s
+/15 17 0 s
+/2 23 0 s
+/15 19 0 s
+/16 21 0 s
+/3 24 0 s
+/2 16 0 s
+/3 30 0 s
+/8 14 0 s
+/15 27 0 s
+/17 34 0 s
+/2 26 0 s
+/15 19 0 s
+/12 35 0 s
+/18 25 0 s
+/6 29 0 s
+/12 22 0 s
+/14 24 -11 s
+/17 25 11 s
+/19 25 0 s
+/5 15 0 s
+/2 22 0 s
+/5 32 0 s
+/16 21 0 s
+/20 26 0 s
+/21 36 0 s
+/9 26 0 s
+/10 3 28 s
+/16 11 -28 s
+/15 26 0 s
+/2 22 0 s
+/9 31 0 s
+/10 3 28 s
+/16 11 -28 s
+/22 37 0 s
+/2 31 0 s
+/3 18 0 s
+/9 15 0 s
+/10 3 28 s
+/23 11 -28 s
+/5 40 0 s
+/3 20 0 s
+/9 15 0 s
+/10 3 28 s
+/12 12 -28 s
+/16 24 0 s
+/12 38 0 s
+/18 25 0 s
+/24 28 0 s
+/9 36 0 s
+/10 3 28 s
+/2 12 -28 s
+/25 18 0 s
+/9 31 0 s
+/10 3 28 s
+/1 10 -28 s
+/17 26 0 s
+/3 24 0 s
+/9 15 0 s
+/10 3 28 s
+/12 12 -28 s
+/16 24 0 s
+/0 34 0 s
+/19 37 0 s
+/26 15 -11 s
+/12 25 11 s
+/4 24 0 s
+/9 16 0 s
+/10 3 28 s
+/3 10 -28 s
+/8 14 0 s
+/23 26 0 s
+/2 40 0 s
+/27 32 -10 s
+/22 15 10 s
+/24 31 0 s
+/0 35 0 s
+/28 38 -10 s
+/29 18 9 s
+/22 -1932 -57 s
+/24 31 0 s
+/0 35 0 s
+/5 48 0 s
+/4 21 0 s
+/15 17 0 s
+/15 35 0 s
+/21 20 0 s
+/12 27 0 s
+/19 24 0 s
+/17 14 0 s
+/3 24 0 s
+/9 15 0 s
+/10 3 28 s
+/12 12 -28 s
+/16 24 0 s
+/5 26 0 s
+/4 21 0 s
+/30 17 -11 s
+/12 38 11 s
+/14 24 -11 s
+/3 24 11 s
+/9 15 0 s
+/10 3 28 s
+/23 11 -28 s
+/9 39 0 s
+/10 3 28 s
+/31 11 -28 s
+/5 23 0 s
+/3 20 0 s
+/9 15 0 s
+/10 3 28 s
+/12 12 -28 s
+/16 24 0 s
+/5 39 0 s
+/19 21 0 s
+/26 14 -11 s
+/12 25 11 s
+/4 24 0 s
+/9 17 0 s
+/10 3 28 s
+/3 10 -28 s
+/8 14 0 s
+/23 26 0 s
+/2 40 0 s
+/1 30 0 s
+/5 27 0 s
+/2 22 0 s
+/15 19 0 s
+/20 22 0 s
+/12 38 0 s
+/16 24 0 s
+/3 36 0 s
+/8 14 0 s
+/15 27 0 s
+/15 35 0 s
+/2 22 0 s
+/3 18 0 s
+/9 15 0 s
+/10 3 28 s
+/23 10 -28 s
+/5 40 0 s
+/3 20 0 s
+/9 15 0 s
+/10 3 28 s
+/12 12 -28 s
+/16 24 0 s
+/5 39 0 s
+/16 21 0 s
+/20 26 0 s
+/3 35 0 s
+/8 14 0 s
+/15 27 0 s
+/2 35 0 s
+/9 19 0 s
+/10 3 28 s
+/23 10 -28 s
+/17 39 0 s
+/19 25 0 s
+/5 15 0 s
+/3 20 0 s
+/9 15 0 s
+/10 3 28 s
+/12 12 -28 s
+/16 24 0 s
+/12 38 0 s
+/18 25 0 s
+/14 -1833 -68 s
+/4 25 11 s
+/12 18 0 s
+/1 23 0 s
+/5 27 0 s
+/1 20 0 s
+/9 26 0 s
+/10 3 28 s
+/19 11 -28 s
+/9 14 0 s
+/10 3 28 s
+/3 10 -28 s
+/30 14 -11 s
+/20 39 11 s
+/9 24 0 s
+/10 3 28 s
+/2 12 -28 s
+/3 17 0 s
+/4 15 0 s
+/9 17 0 s
+/10 3 28 s
+/1 10 -28 s
+/17 26 0 s
+/3 24 0 s
+/9 15 0 s
+/10 3 28 s
+/12 11 -28 s
+/16 24 0 s
+/2 26 0 s
+/29 21 -1 s
+/32 24 1 s
+/12 33 0 s
+/14 24 -11 s
+/17 25 11 s
+/19 25 0 s
+/5 15 0 s
+/2 22 0 s
+/5 32 0 s
+/4 21 0 s
+/15 18 0 s
+/18 35 0 s
+/17 16 0 s
+/16 25 0 s
+/6 26 0 s
+/33 20 0 s
+/10 17 28 s
+/12 12 -28 s
+/16 24 0 s
+/2 26 0 s
+/17 31 0 s
+/2 26 0 s
+/15 20 0 s
+/20 22 0 s
+/3 35 0 s
+/12 16 0 s
+/20 38 0 s
+/15 25 0 s
+/2 22 0 s
+/6 19 0 s
+/4 21 0 s
+/9 17 0 s
+/10 3 28 s
+/1 10 -28 s
+/15 27 0 s
+/34 33 0 s
+/15 40 0 s
+/20 35 0 s
+/15 25 0 s
+/14 21 -11 s
+/15 26 11 s
+/16 22 0 s
+/20 26 0 s
+/15 25 0 s
+/16 21 0 s
+/6 26 0 s
+/15 22 0 s
+/2 35 0 s
+/3 17 0 s
+/4 15 0 s
+/17 17 0 s
+/6 26 0 s
+/3 20 0 s
+/17 15 0 s
+/4 25 0 s
+/15 17 0 s
+/12 35 0 s
+/18 25 0 s
+/14 28 -11 s
+/4 25 11 s
+/12 18 0 s
+/1 23 0 s
+/5 27 0 s
+/1 20 0 s
+/9 26 0 s
+/10 3 28 s
+/19 11 -28 s
+/9 14 0 s
+/10 3 28 s
+/3 10 -28 s
+/30 14 -11 s
+/20 -2046 -47 s
+/9 24 0 s
+/10 3 28 s
+/2 12 -28 s
+/3 17 0 s
+/4 15 0 s
+/9 17 0 s
+/10 3 28 s
+/1 10 -28 s
+/17 26 0 s
+/3 24 0 s
+/9 15 0 s
+/10 3 28 s
+/12 11 -28 s
+/16 24 0 s
+/2 26 0 s
+/29 21 -1 s
+/35 22 0 s
+/9 34 1 s
+/10 3 28 s
+/16 10 -28 s
+/15 26 0 s
+/2 22 0 s
+/5 32 0 s
+/4 22 0 s
+/15 17 0 s
+/26 35 -11 s
+/4 24 11 s
+/5 17 0 s
+/14 22 -11 s
+/8 24 11 s
+/9 26 0 s
+/10 3 28 s
+/6 12 -28 s
+/5 22 0 s
+/19 21 0 s
+/23 26 0 s
+/12 40 0 s
+/20 25 0 s
+/15 25 0 s
+/19 21 0 s
+/2 15 0 s
+/3 30 0 s
+/8 14 0 s
+/5 27 0 s
+/3 20 0 s
+/4 28 0 s
+/15 17 0 s
+/14 21 -11 s
+/4 25 11 s
+/15 18 0 s
+/2 22 0 s
+/15 20 0 s
+/16 21 0 s
+/3 24 0 s
+/8 26 0 s
+/9 26 0 s
+/10 3 28 s
+/26 12 -39 s
+/8 23 11 s
+/36 27 10 s
+/20 17 -10 s
+/9 24 0 s
+/10 3 28 s
+/23 11 -28 s
+/15 40 0 s
+/16 21 0 s
+/2 26 0 s
+/9 18 0 s
+/10 3 28 s
+/12 12 -28 s
+/16 24 0 s
+/5 26 0 s
+/19 21 0 s
+/20 28 0 s
+/9 24 0 s
+/10 3 28 s
+/2 11 -28 s
+/3 18 0 s
+/4 15 0 s
+/9 16 0 s
+/10 3 28 s
+/1 10 -28 s
+/17 26 0 s
+/3 24 0 s
+/9 15 0 s
+/10 3 28 s
+/12 12 -28 s
+/16 24 0 s
+/2 26 0 s
+/1 30 0 s
+/30 26 -11 s
+/18 38 11 s
+/5 17 0 s
+/6 22 0 s
+/3 20 0 s
+/12 16 0 s
+/4 24 0 s
+/9 17 0 s
+/10 3 28 s
+/31 11 -28 s
+/9 22 0 s
+/10 3 28 s
+/16 11 -28 s
+/26 26 -11 s
+/23 -1992 -46 s
+/17 39 0 s
+/19 25 0 s
+/3 13 0 s
+/9 15 0 s
+/10 3 28 s
+/21 10 -28 s
+/5 27 0 s
+/4 21 0 s
+/9 17 0 s
+/10 3 28 s
+/5 11 -28 s
+/3 21 0 s
+/15 16 0 s
+/20 34 0 s
+/15 25 0 s
+/16 21 0 s
+/2 26 0 s
+/9 19 0 s
+/10 3 28 s
+/33 10 -28 s
+/10 17 28 s
+/15 12 -28 s
+/2 23 0 s
+/9 31 0 s
+/10 3 28 s
+/16 10 -28 s
+/3 24 0 s
+/12 16 0 s
+/1 36 0 s
+/9 26 0 s
+/10 3 28 s
+/21 10 -28 s
+/5 27 0 s
+/4 21 0 s
+/9 16 0 s
+/10 3 28 s
+/5 12 -28 s
+/3 21 0 s
+/15 15 0 s
+/6 35 0 s
+/12 22 0 s
+/14 24 -11 s
+/17 25 11 s
+/19 25 0 s
+/5 15 0 s
+/2 22 0 s
+/5 32 0 s
+/16 21 0 s
+/20 26 0 s
+/23 37 0 s
+/5 40 0 s
+/4 21 0 s
+/26 17 -11 s
+/9 24 11 s
+/10 3 28 s
+/16 10 -28 s
+/5 27 0 s
+/19 21 0 s
+/20 27 0 s
+/15 25 0 s
+/16 21 0 s
+/2 26 0 s
+/9 19 0 s
+/10 3 28 s
+/3 10 -28 s
+/9 15 0 s
+/10 3 28 s
+/15 11 -28 s
+/2 22 0 s
+/29 21 -1 s
+/7 22 1 s
+/8 30 0 s
+/15 27 0 s
+/35 32 -1 s
+/9 34 1 s
+/10 3 28 s
+/16 10 -28 s
+/15 26 0 s
+/22 34 0 s
+/2 32 0 s
+/3 17 0 s
+/9 15 0 s
+/10 3 28 s
+/23 11 -28 s
+/5 40 0 s
+/3 20 0 s
+/9 15 0 s
+/10 3 28 s
+/12 11 -28 s
+/16 24 0 s
+/12 39 0 s
+/18 25 0 s
+/24 -1808 -58 s
+/9 36 0 s
+/10 3 28 s
+/2 12 -28 s
+/25 18 0 s
+/9 31 0 s
+/10 3 28 s
+/1 10 -28 s
+/17 26 0 s
+/3 24 0 s
+/9 15 0 s
+/10 3 28 s
+/12 12 -28 s
+/16 24 0 s
+/0 34 0 s
+/19 37 0 s
+/26 15 -11 s
+/12 25 11 s
+/4 24 0 s
+/9 16 0 s
+/10 3 28 s
+/3 10 -28 s
+/8 14 0 s
+/23 26 0 s
+/27 52 -10 s
+/35 16 9 s
+/22 36 1 s
+/24 30 0 s
+/0 35 0 s
+/28 39 -10 s
+/9 28 10 s
+/10 3 28 s
+/2 12 -28 s
+/9 31 0 s
+/10 3 28 s
+/16 10 -28 s
+/3 24 0 s
+/4 15 0 s
+/12 18 0 s
+/20 25 0 s
+/17 24 0 s
+/6 26 0 s
+/15 22 0 s
+/20 22 0 s
+/29 26 -1 s
+/35 22 0 s
+/22 37 1 s
+/24 30 0 s
+/0 35 0 s
+/23 47 0 s
+/12 40 0 s
+/20 25 0 s
+/15 25 0 s
+/19 21 0 s
+/2 15 0 s
+/34 30 0 s
+/15 40 0 s
+/2 35 0 s
+/15 20 0 s
+/5 22 0 s
+/4 21 0 s
+/6 18 0 s
+/8 20 0 s
+/20 39 0 s
+/9 24 0 s
+/10 3 28 s
+/2 12 -28 s
+/25 18 0 s
+/9 32 0 s
+/10 3 28 s
+/1 9 -28 s
+/17 26 0 s
+/3 24 0 s
+/9 15 0 s
+/10 3 28 s
+/12 12 -28 s
+/16 24 0 s
+/2 26 0 s
+/17 31 0 s
+/2 26 0 s
+/9 18 0 s
+/10 3 28 s
+/16 11 -28 s
+/26 26 -11 s
+/21 36 11 s
+/9 26 0 s
+/10 3 28 s
+/16 10 -28 s
+/15 26 0 s
+/2 22 0 s
+/29 21 -1 s
+/7 22 1 s
+/8 30 0 s
+/15 27 0 s
+/5 -2028 -57 s
+/19 21 0 s
+/26 15 -11 s
+/12 25 11 s
+/4 24 0 s
+/9 17 0 s
+/10 3 28 s
+/3 10 -28 s
+/8 14 0 s
+/23 26 0 s
+/9 51 0 s
+/10 3 28 s
+/2 12 -28 s
+/15 32 0 s
+/37 20 0 s
+/15 27 0 s
+/6 22 0 s
+/17 21 0 s
+/3 24 0 s
+/15 16 0 s
+/20 22 0 s
+/9 37 0 s
+/10 3 28 s
+/16 11 -28 s
+/5 39 0 s
+/26 34 -11 s
+/4 24 11 s
+/12 18 0 s
+/17 24 0 s
+/14 25 -11 s
+/12 38 11 s
+/18 25 0 s
+/2 29 0 s
+/3 18 0 s
+/5 16 0 s
+/16 21 0 s
+/20 26 0 s
+/5 25 0 s
+/4 21 0 s
+/20 18 0 s
+/3 35 0 s
+/15 16 0 s
+/2 22 0 s
+/3 18 0 s
+/14 27 -11 s
+/4 25 11 s
+/12 18 0 s
+/1 23 0 s
+/19 26 0 s
+/15 15 0 s
+/23 21 0 s
+/2 39 0 s
+/29 21 -1 s
+/7 22 1 s
+/8 29 0 s
+/15 27 0 s
+/15 35 0 s
+/37 21 0 s
+/14 26 -11 s
+/15 26 11 s
+/4 21 0 s
+/9 16 0 s
+/10 3 28 s
+/23 11 -28 s
+/15 40 0 s
+/16 21 0 s
+/3 24 0 s
+/5 16 0 s
+/19 21 0 s
+/4 27 0 s
+/15 17 0 s
+/2 22 0 s
+/17 19 0 s
+/19 25 0 s
+/3 13 0 s
+/2 15 0 s
+/2 33 0 s
+/8 17 0 s
+/12 27 0 s
+/11 23 0 s
+/3 49 0 s
+/8 14 0 s
+/5 27 0 s
+/3 20 0 s
+/35 26 -1 s
+/22 37 1 s
+/24 30 0 s
+/0 35 0 s
+/12 -1998 -58 s
+/18 25 0 s
+/18 16 0 s
+/15 17 0 s
+/4 21 0 s
+/2 17 0 s
+/16 31 0 s
+/15 26 0 s
+/11 21 0 s
+/14 49 -11 s
+/12 26 11 s
+/2 25 0 s
+/2 19 0 s
+/9 19 0 s
+/10 3 28 s
+/1 10 -28 s
+/9 26 0 s
+/10 3 28 s
+/19 11 -28 s
+/9 14 0 s
+/10 3 28 s
+/3 9 -28 s
+/9 15 0 s
+/10 3 28 s
+/15 12 -28 s
+/2 22 0 s
+/18 32 0 s
+/12 17 0 s
+/4 24 0 s
+/3 28 0 s
+/8 14 0 s
+/15 27 0 s
+/12 35 0 s
+/14 24 -11 s
+/3 24 11 s
+/9 15 0 s
+/10 3 28 s
+/23 10 -28 s
+/9 39 0 s
+/10 3 28 s
+/31 11 -28 s
+/5 23 0 s
+/3 20 0 s
+/9 15 0 s
+/10 3 28 s
+/12 12 -28 s
+/16 24 0 s
+/12 39 0 s
+/18 25 0 s
+/14 28 -11 s
+/4 25 11 s
+/12 18 0 s
+/1 23 0 s
+/19 26 0 s
+/15 14 0 s
+/23 22 0 s
+/2 39 0 s
+/11 31 0 s
+/9 37 0 s
+/10 3 28 s
+/3 9 -28 s
+/8 14 0 s
+/6 40 0 s
+/12 22 0 s
+/23 24 0 s
+/14 39 -11 s
+/19 25 11 s
+/15 15 0 s
+/37 20 0 s
+/14 38 -11 s
+/5 26 11 s
+/3 20 0 s
+/3 14 0 s
+/15 16 0 s
+/4 21 0 s
+/16 17 0 s
+/2 26 0 s
+/12 32 0 s
+/18 25 0 s
+/20 29 0 s
+/15 25 0 s
+/14 21 -11 s
+/15 26 11 s
+/16 21 0 s
+/20 26 0 s
+/15 25 0 s
+/16 21 0 s
+/6 27 0 s
+/15 22 0 s
+/29 23 -1 s
+/LocalDjVuFont undefinefont grestore
+% -- end print
+grestore
+page-origstate restore
+showpage
+%%Trailer
+doc-origstate restore
+%%EOF

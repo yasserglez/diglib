@@ -36,10 +36,24 @@ class TestDigitalLibrary(unittest.TestCase):
     def tearDown(self):
         self._library.close()
         shutil.rmtree(self._library_dir)
+        
+    def test_add_doc_ps(self):
+        ps_path = os.path.join(self._test_dir, 'en.ps')
+        tags = set('abcd')
+        doc = self._library.add_doc(ps_path, tags)
+        self.assertEqual(doc.mime_type, 'application/postscript')
+        self.assertNotEqual(doc.small_thumbnail_abspath, None)
+        self.assertNotEqual(doc.normal_thumbnail_abspath, None)
+        self.assertNotEqual(doc.large_thumbnail_abspath, None)
+        self.assertEqual(doc.language_code, 'en')
+        self.assertSetEqual(doc.tags, tags)
+        other_doc = self._library.get_doc(doc.hash_md5)
+        self._assert_docs_equal(doc, other_doc)
+        return doc
 
     def test_add_doc_txt(self):
         txt_path = os.path.join(self._test_dir, 'es.txt')
-        tags = set(['a', 'b', 'c'])
+        tags = set('abc')
         doc = self._library.add_doc(txt_path, tags)
         self.assertEqual(doc.mime_type, 'text/plain')
         self.assertEqual(doc.small_thumbnail_abspath, None)
@@ -53,7 +67,7 @@ class TestDigitalLibrary(unittest.TestCase):
 
     def test_add_doc_pdf(self):
         pdf_path = os.path.join(self._test_dir, 'en.pdf')
-        tags = set(['a', 'b'])
+        tags = set('ab')
         doc = self._library.add_doc(pdf_path, tags)
         self.assertEqual(doc.mime_type, 'application/pdf')
         self.assertNotEqual(doc.small_thumbnail_abspath, None)
@@ -80,16 +94,19 @@ class TestDigitalLibrary(unittest.TestCase):
         return doc
 
     def test_add_doc_all(self):
+        ps_doc = self.test_add_doc_ps()
         txt_doc = self.test_add_doc_txt()
         pdf_doc = self.test_add_doc_pdf()
         djvu_doc = self.test_add_doc_djvu()
+        other_ps_doc = self._library.get_doc(ps_doc.hash_md5)
         other_txt_doc = self._library.get_doc(txt_doc.hash_md5)
         other_pdf_doc = self._library.get_doc(pdf_doc.hash_md5)
         other_djvu_doc = self._library.get_doc(djvu_doc.hash_md5)
+        self._assert_docs_equal(ps_doc, other_ps_doc)
         self._assert_docs_equal(txt_doc, other_txt_doc)
         self._assert_docs_equal(pdf_doc, other_pdf_doc)
         self._assert_docs_equal(djvu_doc, other_djvu_doc)
-        
+
     def test_add_doc_exact_duplicate(self):
         with self.assertRaises(error.DocumentDuplicatedExact):
             self.test_add_doc_txt()
@@ -99,7 +116,7 @@ class TestDigitalLibrary(unittest.TestCase):
         with self.assertRaises(error.DocumentDuplicatedSimilar):
             self.test_add_doc_txt()
             similar_path = os.path.join(self._test_dir, 'similar.txt')
-            self._library.add_doc(similar_path, set(['a', 'b', 'c']))
+            self._library.add_doc(similar_path, set('abc'))
 
     def test_add_doc_not_retrievable(self):
         with self.assertRaises(error.DocumentNotRetrievable):
@@ -147,8 +164,8 @@ class TestDigitalLibrary(unittest.TestCase):
         original = self.test_add_doc_txt()
         self._library.delete_tag('c')
         modified = self._library.get_doc(original.hash_md5)
-        self.assertSetEqual(modified.tags, set(['a', 'b']))
-        self.assertListEqual(self._library.search('', set(['c'])), [])
+        self.assertSetEqual(modified.tags, set('ab'))
+        self.assertListEqual(self._library.search('', set('c')), [])
 
     def test_delete_tag_not_retrievable(self):
         doc_path = os.path.join(self._test_dir, 'not-retrievable.txt')
@@ -165,9 +182,9 @@ class TestDigitalLibrary(unittest.TestCase):
         original = self.test_add_doc_txt()
         self._library.rename_tag('c', 'z')
         modified = self._library.get_doc(original.hash_md5)
-        self.assertSetEqual(modified.tags, set(['a', 'b', 'z']))
-        self.assertListEqual(self._library.search('', set(['c'])), [])
-        self.assertListEqual(self._library.search('', set(['z'])), [original.hash_md5])
+        self.assertSetEqual(modified.tags, set('abz'))
+        self.assertListEqual(self._library.search('', set('c')), [])
+        self.assertListEqual(self._library.search('', set('z')), [original.hash_md5])
         
     def test_rename_tag_duplicated(self):
         self._library.add_tag('a')
@@ -188,22 +205,24 @@ class TestDigitalLibrary(unittest.TestCase):
             self._library.update_tags(doc.hash_md5, set())
 
     def test_get_tag_freq(self):
+        self.test_add_doc_ps()
         self.test_add_doc_txt()
         self.test_add_doc_pdf()
         self.test_add_doc_djvu()
-        self._library.add_tag('d')
-        self.assertEqual(self._library.get_tag_freq('d'), 0.0)
-        self.assertEqual(self._library.get_tag_freq('c'), 1.0/3.0)
-        self.assertEqual(self._library.get_tag_freq('b'), 2.0/3.0)
+        self._library.add_tag('e')
+        self.assertEqual(self._library.get_tag_freq('e'), 0.0)
+        self.assertEqual(self._library.get_tag_freq('d'), 1.0/4.0)
+        self.assertEqual(self._library.get_tag_freq('c'), 2.0/4.0)
+        self.assertEqual(self._library.get_tag_freq('b'), 3.0/4.0)
         self.assertEqual(self._library.get_tag_freq('a'), 1.0)
 
     def test_search_empty(self):
         self.assertListEqual(self._library.search('foo bar', set()), [])
-        self.assertListEqual(self._library.search('foo bar', set(['c'])), [])
+        self.assertListEqual(self._library.search('foo bar', set('c')), [])
         self.test_add_doc_txt()
         self.test_add_doc_pdf()
         self.assertListEqual(self._library.search('foo bar', set()), [])
-        self.assertListEqual(self._library.search('foo bar', set(['c'])), [])
+        self.assertListEqual(self._library.search('foo bar', set('c')), [])
 
     def test_search_all(self):
         self.assertListEqual(self._library.search('', set()), [])
@@ -222,7 +241,7 @@ class TestDigitalLibrary(unittest.TestCase):
     def test_search_filtered(self):
         txt_doc = self.test_add_doc_txt()
         self.test_add_doc_pdf()
-        results = self._library.search('+VEDA evolutionary optimization', set(['a', 'b', 'c']))
+        results = self._library.search('+VEDA evolutionary optimization', set('abc'))
         self.assertListEqual(results, [txt_doc.hash_md5])
         
     def _assert_docs_equal(self, x, y):
