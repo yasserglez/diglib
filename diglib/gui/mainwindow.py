@@ -427,23 +427,24 @@ class MainWindow(XMLWidget):
         # Add the special rows.
         self._tags_liststore.append((self.TAGS_TREEVIEW_ROW_ALL, 'All Documents', pango.FontDescription()))
         self._tags_liststore.append((self.TAGS_TREEVIEW_ROW_SEPARATOR, None, pango.FontDescription()))
-        # Add one row for each tag.
         default_size = self._main_window.get_style().font_desc.get_size()
         # Smallest and largest font sizes.
         s = 0.75 * default_size
         S = 1.5 * default_size
+        # Add one row for each tag.
         tags = self._library.get_all_tags()
         tag_freqs = [self._library.get_tag_freq(tag) for tag in tags]
-        # Minimum and maximum frequencies.
-        f = math.log1p(min(tag_freqs))
-        F = math.log1p(max(tag_freqs))
-        for tag in tags:
-            font_desc = pango.FontDescription()
-            if F > f:
-                t = math.log1p(self._library.get_tag_freq(tag)) # Tag frequency.
-                font_size = int(s + (S - s) * ((t - f) / (F - f)))
-                font_desc.set_size(font_size)
-            self._tags_liststore.append([self.TAGS_TREEVIEW_ROW_TAG, tag, font_desc])
+        if tag_freqs:
+            # Minimum and maximum frequencies.
+            f = math.log1p(min(tag_freqs))
+            F = math.log1p(max(tag_freqs))
+            for tag in tags:
+                font_desc = pango.FontDescription()
+                if F > f:
+                    t = math.log1p(self._library.get_tag_freq(tag)) # Tag frequency.
+                    font_size = int(s + (S - s) * ((t - f) / (F - f)))
+                    font_desc.set_size(font_size)
+                self._tags_liststore.append([self.TAGS_TREEVIEW_ROW_TAG, tag, font_desc])
 
     def _update_docs_iconview(self):
         self._docs_liststore.clear()
