@@ -24,26 +24,27 @@ class DigitalLibraryError(Exception):
 class DocumentError(DigitalLibraryError):
     pass
 
-
 class DocumentNotFound(DocumentError):
     pass
 
-
-class DuplicateError(DocumentError):
+class DocumentDuplicated(DocumentError):
     pass
 
-
-class ExactDuplicateError(DuplicateError):
+class DocumentDuplicatedExact(DocumentDuplicated):
     pass
 
-
-class SimilarDuplicateError(DuplicateError):
+class DocumentDuplicatedSimilar(DocumentDuplicated):
     pass
 
-
-class NotRetrievableError(DocumentError):
+class DocumentNotRetrievable(DocumentError):
     pass
-
 
 class DocumentNotSupported(DocumentError):
+    pass
+
+
+class TagError(DigitalLibraryError):
+    pass
+
+class TagDuplicated(TagError):
     pass

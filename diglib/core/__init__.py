@@ -148,7 +148,7 @@ class DigitalLibrary(object):
         # Check if the document can be retrieved with the available information.
         if not self._is_retrievable(doc):
             self._index.delete_doc(hash_md5)
-            raise error.NotRetrievableError()
+            raise error.DocumentNotRetrievable()
         self._database.add_doc(doc)
         doc.set_documents_dir(self._documents_dir)
         doc.set_thumbnails_dir(self._thumbnails_dir)
@@ -179,8 +179,10 @@ class DigitalLibrary(object):
 
     def add_tag(self, tag):
         tag = self._normalize_tag(tag)
-        if tag not in self.get_all_tags():
+        if tag not in self._database.get_all_tags():
             self._database.add_tag(tag)
+        else:
+            raise error.TagDuplicated()            
 
     def get_all_tags(self):
         return self._database.get_all_tags()
@@ -191,8 +193,11 @@ class DigitalLibrary(object):
     def rename_tag(self, old_name, new_name):
         old_name = self._normalize_tag(old_name)
         new_name = self._normalize_tag(new_name)
-        self._database.rename_tag(old_name, new_name)
-        self._index.rename_tag(old_name, new_name)
+        if new_name not in self._database.get_all_tags():
+            self._database.rename_tag(old_name, new_name)
+            self._index.rename_tag(old_name, new_name)
+        else:
+            raise error.TagDuplicated()
 
     def update_tags(self, hash_md5, tags):
         tags = set([self._normalize_tag(tag) for tag in tags])
@@ -206,7 +211,7 @@ class DigitalLibrary(object):
             doc = self.get_doc(hash_md5)
             if (len(doc.tags) == self.MIN_TAGS and
                 self._index.get_doc_terms_count(doc.hash_md5) < self.MIN_TERMS):
-                raise error.NotRetrievableError()
+                raise error.DocumentNotRetrievable()
         self._database.delete_tag(tag)
         self._index.delete_tag(tag)
 
@@ -221,7 +226,7 @@ class DigitalLibrary(object):
     # Check if the document (or a similar document) is already in the database.
     def _check_duplicated(self, hash_md5, hash_ssdeep, doc_size):
         if self._database.get_doc(hash_md5):
-            raise error.ExactDuplicateError()
+            raise error.DocumentDuplicatedExact()
         eps = max(0.25 * doc_size, 102400)
         lower_size = max(0, doc_size - eps)
         upper_size = doc_size + eps
@@ -229,7 +234,7 @@ class DigitalLibrary(object):
         for doc in docs:
             score = ssdeep.compare(hash_ssdeep, doc.hash_ssdeep)
             if score >= self.SSDEEP_THRESHOLD:
-                raise error.SimilarDuplicateError()
+                raise error.DocumentDuplicatedSimilar()
 
     # Check if the document can be retrieved with the available information.
     def _is_retrievable(self, doc):

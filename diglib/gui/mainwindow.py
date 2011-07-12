@@ -168,11 +168,11 @@ class MainWindow(XMLWidget):
         if response == gtk.RESPONSE_OK:
             try:
                 self._library.add_doc(filename, tags)
-            except error.ExactDuplicateError:
+            except error.DocumentDuplicatedExact:
                 result = 'The document is already in the library.'
-            except error.SimilarDuplicateError:
+            except error.DocumentDuplicatedSimilar:
                 result = 'A similar document is already in the library.'
-            except error.NotRetrievableError:
+            except error.DocumentNotRetrievable:
                 result = 'The document is not retrievable.'
             except error.DocumentNotSupported:
                 result = 'The format of the document not supported.'
@@ -183,7 +183,7 @@ class MainWindow(XMLWidget):
                                            gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
                                            'Could not import the document.')
                 dialog.format_secondary_text(result)
-                response = dialog.run()
+                dialog.run()
                 dialog.destroy()
             else:
                 self._update_tags_treeview()
@@ -253,7 +253,7 @@ class MainWindow(XMLWidget):
                 try:
                     for tag in selection:
                         self._library.delete_tag(tag)
-                except error.NotRetrievableError:
+                except error.DocumentNotRetrievable:
                     message = 'Could not delete the tag "%s".' % tag
                     secondary_text = 'If the tag is deleted at least ' \
                         'one document could not be retrieved.'
@@ -261,7 +261,7 @@ class MainWindow(XMLWidget):
                                                gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR,
                                                gtk.BUTTONS_OK, message)
                     dialog.format_secondary_text(secondary_text)
-                    response = dialog.run()
+                    dialog.run()
                     dialog.destroy()
                 self._update_tags_treeview()
                 self._update_docs_iconview()
@@ -272,8 +272,19 @@ class MainWindow(XMLWidget):
         tag = dialog.get_tag()
         dialog.destroy()
         if response == gtk.RESPONSE_ACCEPT:
-            self._library.add_tag(tag)
-            self._update_tags_treeview()
+            try:
+                self._library.add_tag(tag)
+            except error.TagDuplicated:
+                message = 'Could not add the tag "%s".' % tag
+                secondary_text = 'The tag already exists in the database.'
+                dialog = gtk.MessageDialog(self._main_window,
+                                           gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR,
+                                           gtk.BUTTONS_OK, message)
+                dialog.format_secondary_text(secondary_text)
+                dialog.run()
+                dialog.destroy()
+            else:
+                self._update_tags_treeview()
 
     def on_close_menuitem_activate(self, menuitem):
         self._main_window.destroy()
@@ -354,8 +365,19 @@ class MainWindow(XMLWidget):
         new_name = new_name.strip()
         old_name = self._tags_liststore.get_value(iter, self.TAGS_TREEVIEW_COLUMN_TAG)
         if old_name != new_name:
-            self._library.rename_tag(old_name, new_name)
-            self._update_tags_treeview()
+            try:
+                self._library.rename_tag(old_name, new_name)
+            except error.TagDuplicated:
+                message = 'Could not rename the tag "%s".' % old_name
+                secondary_text = 'The tag "%s" exists in the database.' % new_name
+                dialog = gtk.MessageDialog(self._main_window,
+                                           gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR,
+                                           gtk.BUTTONS_OK, message)
+                dialog.format_secondary_text(secondary_text)
+                dialog.run()
+                dialog.destroy()
+            else:
+                self._update_tags_treeview()
 
     def on_search_entry_activate_timeout(self, search_entry):
         self._query = search_entry.get_text()
@@ -363,16 +385,16 @@ class MainWindow(XMLWidget):
 
     def on_tags_treeview_selection_changed(self, *args):
         self._selected_tags = set(self._iter_selected_tags())
-        sensitive = len(self._selected_tags) > 0
-        self._rename_tag_menuitem.set_sensitive(sensitive)
-        self._delete_tags_menuitem.set_sensitive(sensitive)
-        self._delete_tags_toolbutton.set_sensitive(sensitive)
+        self._rename_tag_menuitem.set_sensitive(len(self._selected_tags) == 1)
+        self._delete_tags_menuitem.set_sensitive(len(self._selected_tags) > 0)
+        self._delete_tags_toolbutton.set_sensitive(len(self._selected_tags) > 0)
         if self._search_timeout_id > 0:
             gobject.source_remove(self._search_timeout_id)
         gobject.timeout_add(self._search_timeout, self._search_timeout_callback)
 
     def on_docs_iconview_selection_changed(self, iconview):
-        sensitive = len(list(self._iter_selected_docs())) > 0
+        selected_docs = list(self._iter_selected_docs())
+        sensitive = len(selected_docs) > 0
         self._docs_menuitem.set_sensitive(sensitive)
         self._open_docs_toolbutton.set_sensitive(sensitive)
         self._copy_docs_toolbutton.set_sensitive(sensitive)

@@ -86,11 +86,11 @@ class ImportDirectoryWindow(XMLWidget):
                 gobject.idle_add(self._update_progressbar, i + 1, total_docs)
             try:
                 self._library.add_doc(doc_path, tags)
-            except error.ExactDuplicateError:
+            except error.DocumentDuplicatedExact:
                 result = 'The document is already in the library.'
-            except error.SimilarDuplicateError:
+            except error.DocumentDuplicatedSimilar:
                 result = 'A similar document is already in the library.'
-            except error.NotRetrievableError:
+            except error.DocumentNotRetrievable:
                 result = 'The document is not retrievable.'
             except error.DocumentNotSupported:
                 result = 'The format of the document not supported.'

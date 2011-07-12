@@ -75,18 +75,18 @@ class TestDigitalLibrary(unittest.TestCase):
         self._assert_docs_equal(pdf_doc, other_pdf_doc)
         
     def test_add_doc_exact_duplicate(self):
-        with self.assertRaises(error.ExactDuplicateError):
+        with self.assertRaises(error.DocumentDuplicatedExact):
             self.test_add_doc_txt()
             self.test_add_doc_txt()
 
     def test_add_doc_similar_duplicate(self):
-        with self.assertRaises(error.SimilarDuplicateError):
+        with self.assertRaises(error.DocumentDuplicatedSimilar):
             self.test_add_doc_txt()
             similar_path = os.path.join(self._test_dir, 'similar.txt')
             self._library.add_doc(similar_path, set(['vine', 'copula', 'veda']))
 
     def test_add_doc_not_retrievable(self):
-        with self.assertRaises(error.NotRetrievableError):
+        with self.assertRaises(error.DocumentNotRetrievable):
             doc_path = os.path.join(self._test_dir, 'not-retrievable.txt')
             self._library.add_doc(doc_path, set(['veda']))
 
@@ -118,8 +118,8 @@ class TestDigitalLibrary(unittest.TestCase):
     def test_add_tag_duplicated(self):
         self._library.add_tag('a')
         self.assertSetEqual(self._library.get_all_tags(), set('a'))
-        self._library.add_tag('a')
-        self.assertSetEqual(self._library.get_all_tags(), set('a'))
+        with self.assertRaises(error.TagDuplicated):
+            self._library.add_tag('a')
 
     def test_delete_tag_free(self):
         self._library.add_tag('a')
@@ -136,7 +136,7 @@ class TestDigitalLibrary(unittest.TestCase):
     def test_delete_tag_not_retrievable(self):
         doc_path = os.path.join(self._test_dir, 'not-retrievable.txt')
         self._library.add_doc(doc_path, set('abc'))
-        with self.assertRaises(error.NotRetrievableError):
+        with self.assertRaises(error.DocumentNotRetrievable):
             self._library.delete_tag('a')
 
     def test_rename_tag_free(self):
@@ -151,6 +151,12 @@ class TestDigitalLibrary(unittest.TestCase):
         self.assertSetEqual(modified.tags, set(['vine', 'copula', 'a']))
         self.assertListEqual(self._library.search('', set(['veda'])), [])
         self.assertListEqual(self._library.search('', set(['a'])), [original.hash_md5])
+        
+    def test_rename_tag_duplicated(self):
+        self._library.add_tag('a')
+        self._library.add_tag('b')
+        with self.assertRaises(error.TagDuplicated):
+            self._library.rename_tag('b', 'a')    
 
     def test_update_tags(self):
         doc = self.test_add_doc_txt()
