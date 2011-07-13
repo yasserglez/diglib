@@ -72,6 +72,7 @@ class MainWindow(XMLWidget):
         self._open_docs_toolbutton = self._builder.get_object('open_docs_toolbutton')
         self._copy_docs_toolbutton = self._builder.get_object('copy_docs_toolbutton')
         self._delete_docs_toolbutton = self._builder.get_object('delete_docs_toolbutton')
+        self._search_entry = SearchEntry()
         # Other instance attributes.
         self._library = library
         self._search_timeout_id = 0
@@ -82,9 +83,11 @@ class MainWindow(XMLWidget):
         self._init_docs_iconview()
         self._init_toolbar()
         self._init_menubar()
-        self._update_tags_treeview()
+        self._query = ''
+        self._old_query = None
+        self._selected_tags = set()
+        self._old_selected_tags = None
         self._select_all_docs_tag()
-        self._update_docs_iconview()
 
     def _init_toolbar(self):
         # The combo box with the size of the icons.
@@ -99,10 +102,9 @@ class MainWindow(XMLWidget):
         icon_size_toolitem.show_all()
         # The search text entry.
         search_toolitem = self._builder.get_object('search_toolitem')
-        search_entry = SearchEntry(self._search_timeout)
-        search_entry.set_width_chars(35)
-        search_entry.connect('activate-timeout', self.on_search_entry_activate_timeout)
-        search_toolitem.add(search_entry)
+        self._search_entry.set_width_chars(35)
+        self._search_entry.connect('changed', self.on_search_entry_changed)
+        search_toolitem.add(self._search_entry)
         search_toolitem.show_all()
 
     def _init_menubar(self):
@@ -168,33 +170,29 @@ class MainWindow(XMLWidget):
             try:
                 self._library.add_doc(filename, tags)
             except error.DocumentDuplicatedExact:
-                result = 'The document is already in the library.'
+                error = 'The document is already in the library.'
             except error.DocumentDuplicatedSimilar:
-                result = 'A similar document is already in the library.'
+                error = 'A similar document is already in the library.'
             except error.DocumentNotRetrievable:
-                result = 'The document is not retrievable.'
+                error = 'The document is not retrievable.'
             except error.DocumentNotSupported:
-                result = 'The format of the document not supported.'
+                error = 'The format of the document not supported.'
             else:
-                result = None
-            if result:
+                error = None
+            if error:
                 dialog = gtk.MessageDialog(self._main_window, gtk.DIALOG_MODAL,
                                            gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
                                            'Could not import the document.')
-                dialog.format_secondary_text(result)
+                dialog.format_secondary_text(error)
                 dialog.run()
                 dialog.destroy()
             else:
                 self._select_all_docs_tag()
-                self._update_tags_treeview()
-                self._update_docs_iconview()
 
     def on_import_dir(self, *args):
         window = ImportDirectoryWindow(self._library)
         window.show()
         self._select_all_docs_tag()     
-        self._update_tags_treeview()
-        self._update_docs_iconview()
 
     def on_open_docs(self, *args):
         for hash_md5 in self._iter_selected_docs():
@@ -231,8 +229,7 @@ class MainWindow(XMLWidget):
             if response == gtk.RESPONSE_YES:
                 for hash_md5 in selection:
                     self._library.delete_doc(hash_md5)
-                self._update_tags_treeview()
-                self._update_docs_iconview()
+                self._select_all_docs_tag()
 
     def on_delete_tags(self, *args):
         selection = list(self._iter_selected_tags())
@@ -264,8 +261,7 @@ class MainWindow(XMLWidget):
                     dialog.format_secondary_text(secondary_text)
                     dialog.run()
                     dialog.destroy()
-                self._update_tags_treeview()
-                self._update_docs_iconview()
+                self._select_all_docs_tag()
 
     def on_add_tag(self, *args):
         dialog = AddTagDialog()
@@ -328,14 +324,14 @@ class MainWindow(XMLWidget):
         if radiomenuitem.get_active() and self._docs_icon_size != new_size:
             self._docs_icon_size = new_size
             self._update_icons_size_widgets()
-            self._update_docs_iconview()
+            self._update_docs_iconview(True)
 
     def on_icons_size_combobox_changed(self, combobox):
         new_size = combobox.get_active()
         if self._docs_icon_size != new_size:
             self._docs_icon_size = new_size
             self._update_icons_size_widgets()
-            self._update_docs_iconview()
+            self._update_docs_iconview(True)
 
     def on_rename_tag_menuitem_activate(self, menuitem):
         selection = self._tags_treeview.get_selection()
@@ -391,10 +387,6 @@ class MainWindow(XMLWidget):
             else:
                 self._update_tags_treeview()
 
-    def on_search_entry_activate_timeout(self, search_entry):
-        self._query = search_entry.get_text()
-        self._update_docs_iconview()
-
     def on_tags_treeview_selection_changed(self, *args):
         self._selected_tags = set(self._iter_selected_tags())
         self._rename_tag_menuitem.set_sensitive(len(self._selected_tags) == 1)
@@ -402,7 +394,15 @@ class MainWindow(XMLWidget):
         self._delete_tags_toolbutton.set_sensitive(len(self._selected_tags) > 0)
         if self._search_timeout_id > 0:
             gobject.source_remove(self._search_timeout_id)
-        gobject.timeout_add(self._search_timeout, self._search_timeout_callback)
+        self._search_timeout_id = gobject.timeout_add(self._search_timeout, 
+                                                      self._search_timeout_callback)
+
+    def on_search_entry_changed(self, *tags):
+        self._query = self._search_entry.get_text()
+        if self._search_timeout_id > 0:
+            gobject.source_remove(self._search_timeout_id)
+        self._search_timeout_id = gobject.timeout_add(self._search_timeout, 
+                                                      self._search_timeout_callback)        
 
     def on_docs_iconview_selection_changed(self, iconview):
         selected_docs = list(self._iter_selected_docs())
@@ -457,26 +457,30 @@ class MainWindow(XMLWidget):
                     font_desc.set_size(font_size)
                 self._tags_liststore.append([self.TAGS_TREEVIEW_ROW_TAG, tag, font_desc])
 
-    def _update_docs_iconview(self):
-        self._docs_liststore.clear()
-        for doc_id in self._library.search(self._query, self._selected_tags):
-            doc = self._library.get_doc(doc_id)
-            if doc.normal_thumbnail_abspath:
-                if self._docs_icon_size == self.DOC_ICON_SMALL:
-                    pixbuf = gtk.gdk.pixbuf_new_from_file(doc.small_thumbnail_abspath)
-                elif self._docs_icon_size == self.DOC_ICON_NORMAL:
-                    pixbuf = gtk.gdk.pixbuf_new_from_file(doc.normal_thumbnail_abspath)
-                elif self._docs_icon_size == self.DOC_ICON_LARGE:
-                    pixbuf = gtk.gdk.pixbuf_new_from_file(doc.large_thumbnail_abspath)
-            else:
-                if self._docs_icon_size == self.DOC_ICON_SMALL:
-                    pixbuf = self._docs_icon_small
-                elif self._docs_icon_size == self.DOC_ICON_NORMAL:
-                    pixbuf = self._docs_icon_normal
-                elif self._docs_icon_size == self.DOC_ICON_LARGE:
-                    pixbuf = self._docs_icon_large
-            self._docs_liststore.append([doc.hash_md5, pixbuf])
-        self._update_statusbar()
+    def _update_docs_iconview(self, force=False):
+        if (force or self._query != self._old_query or
+            self._selected_tags != self._old_selected_tags):
+            self._old_query = self._query
+            self._old_selected_tags = self._selected_tags
+            self._docs_liststore.clear()
+            for doc_id in self._library.search(self._query, self._selected_tags):
+                doc = self._library.get_doc(doc_id)
+                if doc.normal_thumbnail_abspath:
+                    if self._docs_icon_size == self.DOC_ICON_SMALL:
+                        pixbuf = gtk.gdk.pixbuf_new_from_file(doc.small_thumbnail_abspath)
+                    elif self._docs_icon_size == self.DOC_ICON_NORMAL:
+                        pixbuf = gtk.gdk.pixbuf_new_from_file(doc.normal_thumbnail_abspath)
+                    elif self._docs_icon_size == self.DOC_ICON_LARGE:
+                        pixbuf = gtk.gdk.pixbuf_new_from_file(doc.large_thumbnail_abspath)
+                else:
+                    if self._docs_icon_size == self.DOC_ICON_SMALL:
+                        pixbuf = self._docs_icon_small
+                    elif self._docs_icon_size == self.DOC_ICON_NORMAL:
+                        pixbuf = self._docs_icon_normal
+                    elif self._docs_icon_size == self.DOC_ICON_LARGE:
+                        pixbuf = self._docs_icon_large
+                self._docs_liststore.append([doc.hash_md5, pixbuf])
+            self._update_statusbar()
 
     def _update_statusbar(self):
         text = ''
@@ -523,8 +527,10 @@ class MainWindow(XMLWidget):
     def _select_all_docs_tag(self): # The tag filter.
         self._query = ''
         self._selected_tags = set()
+        self._update_tags_treeview()
         selection = self._tags_treeview.get_selection()
         selection.select_path((0, ))
+        self._update_docs_iconview(True)
 
     def _iter_selected_docs(self):
         paths = self._docs_iconview.get_selected_items()

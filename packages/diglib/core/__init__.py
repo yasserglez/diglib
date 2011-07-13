@@ -86,7 +86,7 @@ class DigitalLibrary(object):
 
     # Documents whose similarity is equal or greater
     # than this threshold will be considered equals.
-    SSDEEP_THRESHOLD = 85
+    SSDEEP_THRESHOLD = 90
 
     # A document should satisfy at least one of the following conditions
     # to be considered retrievable. This should be an invariant for all
