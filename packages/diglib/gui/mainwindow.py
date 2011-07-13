@@ -191,8 +191,9 @@ class MainWindow(XMLWidget):
 
     def on_import_dir(self, *args):
         window = ImportDirectoryWindow(self._library)
-        window.show()
-        self._select_all_docs_tag()     
+        response = window.run()
+        if response == gtk.RESPONSE_OK:
+            self._select_all_docs_tag()
 
     def on_open_docs(self, *args):
         for hash_md5 in self._iter_selected_docs():

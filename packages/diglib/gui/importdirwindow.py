@@ -36,6 +36,7 @@ class ImportDirectoryWindow(XMLWidget):
     def __init__(self, library):
         super(ImportDirectoryWindow, self).__init__('import_dir_window')
         # Instance attributes for widgets.
+        self._import_dir_window = self._builder.get_object('import_dir_window')
         self._progressbar = self._builder.get_object('progressbar')
         self._table = self._builder.get_object('table')
         self._hbuttonbox = self._builder.get_object('hbuttonbox')
@@ -46,6 +47,8 @@ class ImportDirectoryWindow(XMLWidget):
         self._liststore = gtk.ListStore(str, str, str)
         # Other instance attributes.
         self._library = library
+        self._exit = False
+        self._thread = None
         # Initialize widgets.
         self._init_treeview()
 
@@ -59,6 +62,20 @@ class ImportDirectoryWindow(XMLWidget):
         self._treeview.set_tooltip_column(self.TREEVIEW_COLUMN_PATH)
         self._treeview.columns_autosize()
         self._treeview.show_all()
+
+    def run(self):
+        self._import_dir_window.show()
+        self._import_dir_window.connect('destroy', self.on_import_dir_window_destroy)
+        while not self._exit:
+            gtk.main_iteration(True)
+        if self._thread:
+            self._thread.join()
+            return gtk.RESPONSE_OK
+        else:
+            return gtk.RESPONSE_CANCEL
+
+    def on_import_dir_window_destroy(self, widget):
+        self._exit = True
 
     def on_import_button_clicked(self, button):
         dir_path = self._filechooserbutton.get_filename()
