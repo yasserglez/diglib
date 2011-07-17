@@ -207,7 +207,7 @@ class MainWindow(XMLWidget):
     def on_copy_docs(self, *args):
         doc_paths = [self._library.get_doc(hash_md5).document_abspath 
                      for hash_md5 in self._iter_selected_docs()]
-        if doc_paths:            
+        if doc_paths:
             def get_func(clipboard, selectiondata, info, data):
                 uris = ['file://%s' % urllib.quote(path) for path in doc_paths]
                 text = 'copy\n%s' % "\n".join(uris)
