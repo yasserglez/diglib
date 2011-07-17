@@ -46,7 +46,7 @@ class Index(object):
         raise NotImplementedError()
     
     # Get the MD5 hashes of the documents with the given tags that match the query. 
-    def search(self, query, tags):
+    def search(self, query, tags, start=None, count=None):
         raise NotImplementedError()    
 
     def close(self):
@@ -132,21 +132,23 @@ class XapianIndex(Index):
             self._index.replace_document(xapian_doc.get_docid(), xapian_doc)
         self._index.flush()
 
-    def search(self, query, tags):
+    def search(self, query, tags, start=None, count=None):
         docs = []
         enquire = xapian.Enquire(self._index)
         query = self._parse_query(query) if query.strip() else xapian.Query.MatchAll
         if tags:
             filter = xapian.Query(xapian.Query.OP_AND, [self.TAG_PREFIX + tag for tag in tags])
             filter = xapian.Query(xapian.Query.OP_SCALE_WEIGHT, filter, 0)
-        else: 
+        else:
             filter = xapian.Query.MatchAll
         enquire.set_query(xapian.Query(xapian.Query.OP_AND, filter, query))
-        mset = enquire.get_mset(0, self._index.get_doccount())
+        mset = enquire.get_mset(start, count) \
+            if None not in (start, count) \
+            else enquire.get_mset(0, self._index.get_doccount())
         for match in mset:
             xapian_doc = match.document
             docs.append(xapian_doc.get_data())
-        return docs    
+        return docs
 
     def close(self):
         self._index.flush()

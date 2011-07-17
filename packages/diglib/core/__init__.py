@@ -222,9 +222,9 @@ class DigitalLibrary(object):
         self._database.delete_tag(tag)
         self._index.delete_tag(tag)
 
-    def search(self, query, tags):
+    def search(self, query, tags, start=None, count=None):
         tags = set([self._normalize_tag(tag) for tag in tags])
-        return self._index.search(query, tags)    
+        return self._index.search(query, tags, start, count)
 
     def close(self):
         self._database.close()

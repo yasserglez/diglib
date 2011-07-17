@@ -18,6 +18,7 @@
 
 import math
 import urllib
+import threading
 
 import gtk
 import pango
@@ -50,7 +51,7 @@ class MainWindow(XMLWidget):
     DOC_ICON_SMALL = 0
     DOC_ICON_NORMAL = 1
     DOC_ICON_LARGE = 2
-
+    
     def __init__(self, library):
         super(MainWindow, self).__init__('main_window')
         # Instance attributes for widgets.
@@ -77,6 +78,9 @@ class MainWindow(XMLWidget):
         self._library = library
         self._search_timeout_id = 0
         self._search_timeout = 1000 # milliseconds.
+        self._thread = threading.Thread()
+        self._thread.start()
+        self._thread_lock = threading.Lock()
         # Initialize widgets.
         self._main_window.set_title(about.NAME)
         self._init_tags_treeview()
@@ -203,7 +207,7 @@ class MainWindow(XMLWidget):
     def on_copy_docs(self, *args):
         doc_paths = [self._library.get_doc(hash_md5).document_abspath 
                      for hash_md5 in self._iter_selected_docs()]
-        if doc_paths:
+        if doc_paths:            
             def get_func(clipboard, selectiondata, info, data):
                 uris = ['file://%s' % urllib.quote(path) for path in doc_paths]
                 text = 'copy\n%s' % "\n".join(uris)
@@ -213,8 +217,8 @@ class MainWindow(XMLWidget):
             clipboard.set_with_data(targets, get_func, lambda clipboard, data: None)
 
     def on_delete_docs(self, *args):
-        selection = list(self._iter_selected_docs())
-        num_docs = len(selection)
+        selected_docs = list(self._iter_selected_docs())
+        num_docs = len(selected_docs)
         if num_docs > 0:
             message = 'Delete the %s?' % \
                 (('%s selected documents' % num_docs)
@@ -228,13 +232,13 @@ class MainWindow(XMLWidget):
             response = dialog.run()
             dialog.destroy()
             if response == gtk.RESPONSE_YES:
-                for hash_md5 in selection:
+                for hash_md5 in selected_docs:
                     self._library.delete_doc(hash_md5)
                 self._select_all_docs_tag()
 
     def on_delete_tags(self, *args):
-        selection = list(self._iter_selected_tags())
-        num_tags = len(selection)
+        selected_tags = list(self._iter_selected_tags())
+        num_tags = len(selected_tags)
         if num_tags > 0:
             message = 'Delete the %s?' % \
                 (('%s selected tags' % num_tags)
@@ -250,7 +254,7 @@ class MainWindow(XMLWidget):
             dialog.destroy()
             if response == gtk.RESPONSE_YES:
                 try:
-                    for tag in selection:
+                    for tag in selected_tags:
                         self._library.delete_tag(tag)
                 except error.DocumentNotRetrievable:
                     message = 'Could not delete the tag "%s".' % tag
@@ -325,14 +329,14 @@ class MainWindow(XMLWidget):
         if radiomenuitem.get_active() and self._docs_icon_size != new_size:
             self._docs_icon_size = new_size
             self._update_icons_size_widgets()
-            self._update_docs_iconview(True)
+            self._update_docs_iconview_wrapper(True)
 
     def on_icons_size_combobox_changed(self, combobox):
         new_size = combobox.get_active()
         if self._docs_icon_size != new_size:
             self._docs_icon_size = new_size
             self._update_icons_size_widgets()
-            self._update_docs_iconview(True)
+            self._update_docs_iconview_wrapper(True)
 
     def on_rename_tag_menuitem_activate(self, menuitem):
         selection = self._tags_treeview.get_selection()
@@ -367,6 +371,11 @@ class MainWindow(XMLWidget):
                 self._docs_menu.show()
                 
     def on_main_window_destroy(self, widget):
+        gtk.gdk.threads_leave() # Allow the thread to acquire gtk.gdk.lock.
+        with self._thread_lock:
+            self._thread_abort = True
+        self._thread.join()
+        gtk.gdk.threads_enter()
         gtk.main_quit()
 
     def on_tag_cellrenderer_edited(self, renderer, path, new_name):
@@ -389,17 +398,16 @@ class MainWindow(XMLWidget):
                 self._update_tags_treeview()
 
     def on_tags_treeview_selection_changed(self, *args):
-        self._selected_tags = set(self._iter_selected_tags())
-        self._rename_tag_menuitem.set_sensitive(len(self._selected_tags) == 1)
-        self._delete_tags_menuitem.set_sensitive(len(self._selected_tags) > 0)
-        self._delete_tags_toolbutton.set_sensitive(len(self._selected_tags) > 0)
+        selected_tags = list(self._iter_selected_tags())
+        self._rename_tag_menuitem.set_sensitive(len(selected_tags) == 1)
+        self._delete_tags_menuitem.set_sensitive(len(selected_tags) > 0)
+        self._delete_tags_toolbutton.set_sensitive(len(selected_tags) > 0)
         if self._search_timeout_id > 0:
             gobject.source_remove(self._search_timeout_id)
         self._search_timeout_id = gobject.timeout_add(self._search_timeout, 
                                                       self._search_timeout_callback)
 
     def on_search_entry_changed(self, *tags):
-        self._query = self._search_entry.get_text()
         if self._search_timeout_id > 0:
             gobject.source_remove(self._search_timeout_id)
         self._search_timeout_id = gobject.timeout_add(self._search_timeout, 
@@ -407,13 +415,11 @@ class MainWindow(XMLWidget):
 
     def on_docs_iconview_selection_changed(self, iconview):
         selected_docs = list(self._iter_selected_docs())
-        sensitive = len(selected_docs) > 0
-        self._docs_menuitem.set_sensitive(sensitive)
-        self._open_docs_toolbutton.set_sensitive(sensitive)
-        self._copy_docs_toolbutton.set_sensitive(sensitive)
-        self._delete_docs_toolbutton.set_sensitive(sensitive)
+        self._docs_menuitem.set_sensitive(len(selected_docs) > 0)
+        self._open_docs_toolbutton.set_sensitive(len(selected_docs) > 0)
+        self._copy_docs_toolbutton.set_sensitive(len(selected_docs) > 0)
+        self._delete_docs_toolbutton.set_sensitive(len(selected_docs) > 0)
         self._update_doc_tags_menu()
-        self._update_statusbar()
 
     def _update_doc_tags_menu(self):
         callback = lambda menuitem: self._doc_tags_menu.remove(menuitem)
@@ -424,9 +430,9 @@ class MainWindow(XMLWidget):
             first_set = tag_sets[0]
             other_sets = tag_sets[1:]
             active_tags = first_set.intersection(*other_sets)
-            for model_row in self._tags_liststore:
-                if model_row[self.TAGS_TREEVIEW_COLUMN_TYPE] == self.TAGS_TREEVIEW_ROW_TAG:
-                    tag = model_row[self.TAGS_TREEVIEW_COLUMN_TAG]
+            for row in self._tags_liststore:
+                if row[self.TAGS_TREEVIEW_COLUMN_TYPE] == self.TAGS_TREEVIEW_ROW_TAG:
+                    tag = row[self.TAGS_TREEVIEW_COLUMN_TAG]
                     menuitem = gtk.CheckMenuItem(tag)
                     if tag in active_tags:
                         menuitem.activate()
@@ -435,6 +441,7 @@ class MainWindow(XMLWidget):
             self._doc_tags_menu.show_all()
 
     def _update_tags_treeview(self):
+        selected_tags = set(self._iter_selected_tags()) # Remember the selection.
         self._tags_liststore.clear()
         # Add the special rows.
         self._tags_liststore.append((self.TAGS_TREEVIEW_ROW_ALL, 'All Documents', pango.FontDescription()))
@@ -444,54 +451,85 @@ class MainWindow(XMLWidget):
         s = 0.75 * default_size
         S = 1.5 * default_size
         # Add one row for each tag.
-        tags = self._library.get_all_tags()
-        tag_freqs = [self._library.get_tag_freq(tag) for tag in tags]
-        if tag_freqs:
+        all_tags = self._library.get_all_tags()
+        all_freqs = [self._library.get_tag_freq(tag) for tag in all_tags]
+        if all_freqs:
             # Minimum and maximum frequencies.
-            f = math.log1p(min(tag_freqs))
-            F = math.log1p(max(tag_freqs))
-            for tag in tags:
+            f = math.log1p(min(all_freqs))
+            F = math.log1p(max(all_freqs))
+            for tag in all_tags:
                 font_desc = pango.FontDescription()
                 if F > f:
                     t = math.log1p(self._library.get_tag_freq(tag)) # Tag frequency.
                     font_size = int(s + (S - s) * ((t - f) / (F - f)))
                     font_desc.set_size(font_size)
                 self._tags_liststore.append([self.TAGS_TREEVIEW_ROW_TAG, tag, font_desc])
+        # Restore the selection (if possible).
+        if selected_tags.issubset(all_tags):
+            selection = self._tags_treeview.get_selection()
+            for row in self._tags_liststore:
+                if (row[self.TAGS_TREEVIEW_COLUMN_TYPE] == self.TAGS_TREEVIEW_ROW_TAG and
+                    row[self.TAGS_TREEVIEW_COLUMN_TAG] in selected_tags):
+                    selection.select_path(row.path)
+        else:
+            self._select_all_docs_tag()
 
-    def _update_docs_iconview(self, force=False):
+    def _update_docs_iconview_wrapper(self, force=False):
         if (force or self._query != self._old_query or
             self._selected_tags != self._old_selected_tags):
             self._old_query = self._query
             self._old_selected_tags = self._selected_tags
-            self._docs_liststore.clear()
-            for doc_id in self._library.search(self._query, self._selected_tags):
-                doc = self._library.get_doc(doc_id)
-                if doc.normal_thumbnail_abspath:
-                    if self._docs_icon_size == self.DOC_ICON_SMALL:
-                        pixbuf = gtk.gdk.pixbuf_new_from_file(doc.small_thumbnail_abspath)
-                    elif self._docs_icon_size == self.DOC_ICON_NORMAL:
-                        pixbuf = gtk.gdk.pixbuf_new_from_file(doc.normal_thumbnail_abspath)
-                    elif self._docs_icon_size == self.DOC_ICON_LARGE:
-                        pixbuf = gtk.gdk.pixbuf_new_from_file(doc.large_thumbnail_abspath)
-                else:
-                    if self._docs_icon_size == self.DOC_ICON_SMALL:
-                        pixbuf = self._docs_icon_small
-                    elif self._docs_icon_size == self.DOC_ICON_NORMAL:
-                        pixbuf = self._docs_icon_normal
-                    elif self._docs_icon_size == self.DOC_ICON_LARGE:
-                        pixbuf = self._docs_icon_large
-                self._docs_liststore.append([doc.hash_md5, pixbuf])
-            self._update_statusbar()
+            # Stop the previous thread (if any), then start a new one.
+            gtk.gdk.threads_leave()
+            with self._thread_lock:
+                self._thread_abort = True
+            self._thread.join()
+            self._thread_abort = False # No lock required.
+            self._thread = threading.Thread(target=self._update_docs_iconview,
+                                            args=(self._query, self._selected_tags))
+            self._thread.start()
 
-    def _update_statusbar(self):
-        text = ''
+    def _update_docs_iconview(self, query, selected_tags):
+        gtk.gdk.threads_enter()
+        self._statusbar.push(0, 'Loading documents...')
+        self._docs_liststore.clear()
+        gtk.gdk.threads_leave()
+        while True:
+            with self._thread_lock:
+                if self._thread_abort:
+                    return # Abort this thread to make a new query.
+            gtk.gdk.threads_enter()
+            start = len(self._docs_liststore)
+            gtk.gdk.threads_leave()
+            count = 10 # Document batch size.
+            results = self._library.search(query, selected_tags, start, count)
+            if results:
+                for hash_md5 in results:
+                    doc = self._library.get_doc(hash_md5)
+                    if doc.normal_thumbnail_abspath:
+                        gtk.gdk.threads_enter()
+                        if self._docs_icon_size == self.DOC_ICON_SMALL:
+                            pixbuf = gtk.gdk.pixbuf_new_from_file(doc.small_thumbnail_abspath)
+                        elif self._docs_icon_size == self.DOC_ICON_NORMAL:
+                            pixbuf = gtk.gdk.pixbuf_new_from_file(doc.normal_thumbnail_abspath)
+                        elif self._docs_icon_size == self.DOC_ICON_LARGE:
+                            pixbuf = gtk.gdk.pixbuf_new_from_file(doc.large_thumbnail_abspath)
+                        gtk.gdk.threads_leave()
+                    else:
+                        if self._docs_icon_size == self.DOC_ICON_SMALL:
+                            pixbuf = self._docs_icon_small
+                        elif self._docs_icon_size == self.DOC_ICON_NORMAL:
+                            pixbuf = self._docs_icon_normal
+                        elif self._docs_icon_size == self.DOC_ICON_LARGE:
+                            pixbuf = self._docs_icon_large
+                    self._docs_liststore.append([doc.hash_md5, pixbuf])
+            else:
+                break # Finished getting results.
+        gtk.gdk.threads_enter()
         num_docs = len(self._docs_liststore)
-        if num_docs:
-            text += '%s %s' % (num_docs, 'documents' if num_docs > 1 else 'document')
-            selected_docs = len(list(self._iter_selected_docs()))
-            if selected_docs:
-                text += ' (%s selected)' % selected_docs
+        text = '%s %s' % (num_docs, 'documents' if num_docs > 1 else 'document')
         self._statusbar.push(0, text)
+        gtk.gdk.threads_leave()
 
     def _update_icons_size_widgets(self):
         self._icon_size_combobox.set_active(self._docs_icon_size)
@@ -521,8 +559,10 @@ class MainWindow(XMLWidget):
             return cmp(row1_tag, row2_tag)
 
     def _search_timeout_callback(self):
+        self._query = self._search_entry.get_text()
+        self._selected_tags = set(self._iter_selected_tags())
         self._search_timeout_id = 0
-        self._update_docs_iconview()
+        self._update_docs_iconview_wrapper()
         return False # Do not call the function again.
 
     def _select_all_docs_tag(self): # The tag filter.
@@ -531,15 +571,15 @@ class MainWindow(XMLWidget):
         self._update_tags_treeview()
         selection = self._tags_treeview.get_selection()
         selection.select_path((0, ))
-        self._update_docs_iconview(True)
+        self._update_docs_iconview_wrapper(True)
 
     def _iter_selected_docs(self):
         paths = self._docs_iconview.get_selected_items()
         for path in paths:
             iter = self._docs_liststore.get_iter(path)
-            doc_id = self._docs_liststore.get_value(iter, self.DOCS_TREEVIEW_COLUMN_ID)
-            yield doc_id
-            
+            hash_md5 = self._docs_liststore.get_value(iter, self.DOCS_TREEVIEW_COLUMN_ID)
+            yield hash_md5
+
     def _iter_selected_tags(self):
         selection = self._tags_treeview.get_selection()
         tags_liststore, paths =  selection.get_selected_rows()
