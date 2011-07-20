@@ -570,6 +570,7 @@ class MainWindow(XMLWidget):
         self._selected_tags = set()
         self._update_tags_treeview()
         selection = self._tags_treeview.get_selection()
+        selection.unselect_all()
         selection.select_path((0, ))
         self._update_docs_iconview_wrapper(True)
 
