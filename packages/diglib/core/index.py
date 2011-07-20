@@ -133,25 +133,21 @@ class XapianIndex(Index):
         self._index.flush()
 
     def search(self, query, tags, start=None, count=None):
-        docs = []
         enquire = xapian.Enquire(self._index)
         query = self._parse_query(query) if query.strip() else xapian.Query.MatchAll
-        if tags:
-            filter = xapian.Query(xapian.Query.OP_AND, [self.TAG_PREFIX + tag for tag in tags])
-            filter = xapian.Query(xapian.Query.OP_SCALE_WEIGHT, filter, 0)
-        else:
-            filter = xapian.Query.MatchAll
-        enquire.set_query(xapian.Query(xapian.Query.OP_AND, filter, query))
+        filter = xapian.Query.MatchAll if not tags else \
+            xapian.Query(xapian.Query.OP_AND, [self.TAG_PREFIX + tag for tag in tags])
+        final_query = xapian.Query(xapian.Query.OP_FILTER, query, filter)
+        enquire.set_docid_order(xapian.Enquire.DONT_CARE)
+        enquire.set_query(final_query)
         mset = enquire.get_mset(start, count) \
-            if None not in (start, count) \
+            if start is not None and count is not None \
             else enquire.get_mset(0, self._index.get_doccount())
-        for match in mset:
-            xapian_doc = match.document
-            docs.append(xapian_doc.get_data())
-        return docs
+        return [match.document.get_data() for match in mset]
 
     def close(self):
         self._index.flush()
+        self._index = None
 
     def _get_xapian_doc(self, hash_md5):
         enquire = xapian.Enquire(self._index)
@@ -163,17 +159,19 @@ class XapianIndex(Index):
     def _parse_query(self, query):
         parser = xapian.QueryParser()
         parser.set_database(self._index)
-        tag_query = parser.parse_query(query, 0, self.TAG_PREFIX)
-        metadata_query = parser.parse_query(query, 0, self.METADATA_PREFIX)
-        content_query = parser.parse_query(query, xapian.QueryParser.FLAG_DEFAULT, self.CONTENT_PREFIX)
+        tag_query = parser.parse_query(query, xapian.QueryParser.FLAG_LOVEHATE, self.TAG_PREFIX)
+        metadata_query = parser.parse_query(query, xapian.QueryParser.FLAG_LOVEHATE, self.METADATA_PREFIX)
+        content_query = parser.parse_query(query, xapian.QueryParser.FLAG_LOVEHATE | xapian.QueryParser.FLAG_PHRASE, self.CONTENT_PREFIX)
+        stemming_query = xapian.Query.MatchNothing
         for lang in LANGUAGES:
             parser.set_stemmer(xapian.Stem(lang))
             parser.set_stemming_strategy(xapian.QueryParser.STEM_SOME)
             parser.set_stopper(self._stoppers[lang])
-            content_query = xapian.Query(xapian.Query.OP_OR, content_query,
-                                         parser.parse_query(query, 0, self.CONTENT_PREFIX))
+            lang_query = parser.parse_query(query, xapian.QueryParser.FLAG_LOVEHATE, self.CONTENT_PREFIX)
+            stemming_query = xapian.Query(xapian.Query.OP_OR, stemming_query, lang_query)
         tag_query = xapian.Query(xapian.Query.OP_SCALE_WEIGHT, tag_query, 15)
         metadata_query = xapian.Query(xapian.Query.OP_SCALE_WEIGHT, metadata_query, 5)
         final_query = xapian.Query(xapian.Query.OP_OR, tag_query, metadata_query)
         final_query = xapian.Query(xapian.Query.OP_OR, final_query, content_query)
+        final_query = xapian.Query(xapian.Query.OP_OR, final_query, stemming_query)
         return final_query

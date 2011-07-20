@@ -136,6 +136,7 @@ class PDFHandler(FileHandler):
 
     def close(self):
         self._document = None
+        self._page = None
 
 
 class DJVUHandler(FileHandler):
