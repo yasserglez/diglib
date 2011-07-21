@@ -91,7 +91,7 @@ class MainWindow(XMLWidget):
         self._old_query = None
         self._selected_tags = set()
         self._old_selected_tags = None
-        self._select_all_docs_tag()
+        self._update_tags_treeview()
 
     def _init_toolbar(self):
         # The combo box with the size of the icons.
@@ -191,13 +191,13 @@ class MainWindow(XMLWidget):
                 dialog.run()
                 dialog.destroy()
             else:
-                self._select_all_docs_tag()
+                self._update_tags_treeview(True)
 
     def on_import_dir(self, *args):
         window = ImportDirectoryWindow(self._library)
         response = window.run()
         if response == gtk.RESPONSE_OK:
-            self._select_all_docs_tag()
+            self._update_tags_treeview(True)
 
     def on_open_docs(self, *args):
         for hash_md5 in self._iter_selected_docs():
@@ -234,7 +234,7 @@ class MainWindow(XMLWidget):
             if response == gtk.RESPONSE_YES:
                 for hash_md5 in selected_docs:
                     self._library.delete_doc(hash_md5)
-                self._select_all_docs_tag()
+                self._update_tags_treeview(True)
 
     def on_delete_tags(self, *args):
         selected_tags = list(self._iter_selected_tags())
@@ -266,7 +266,7 @@ class MainWindow(XMLWidget):
                     dialog.format_secondary_text(secondary_text)
                     dialog.run()
                     dialog.destroy()
-                self._select_all_docs_tag()
+                self._update_tags_treeview(True)
 
     def on_add_tag(self, *args):
         dialog = AddTagDialog()
@@ -440,7 +440,7 @@ class MainWindow(XMLWidget):
                     self._doc_tags_menu.append(menuitem)
             self._doc_tags_menu.show_all()
 
-    def _update_tags_treeview(self):
+    def _update_tags_treeview(self, force_update_docs=False):
         selected_tags = set(self._iter_selected_tags()) # Remember the selection.
         self._tags_liststore.clear()
         # Add the special rows.
@@ -465,14 +465,18 @@ class MainWindow(XMLWidget):
                     font_desc.set_size(font_size)
                 self._tags_liststore.append([self.TAGS_TREEVIEW_ROW_TAG, tag, font_desc])
         # Restore the selection (if possible).
+        selection = self._tags_treeview.get_selection()
         if selected_tags.issubset(all_tags):
-            selection = self._tags_treeview.get_selection()
             for row in self._tags_liststore:
                 if (row[self.TAGS_TREEVIEW_COLUMN_TYPE] == self.TAGS_TREEVIEW_ROW_TAG and
                     row[self.TAGS_TREEVIEW_COLUMN_TAG] in selected_tags):
                     selection.select_path(row.path)
         else:
-            self._select_all_docs_tag()
+            self._selected_tags = set()
+            selection.unselect_all()
+            selection.select_path((0, ))
+        self._update_docs_iconview_wrapper(force_update_docs)
+        self._update_doc_tags_menu()
 
     def _update_docs_iconview_wrapper(self, force=False):
         if (force or self._query != self._old_query or
@@ -564,15 +568,6 @@ class MainWindow(XMLWidget):
         self._search_timeout_id = 0
         self._update_docs_iconview_wrapper()
         return False # Do not call the function again.
-
-    def _select_all_docs_tag(self): # The tag filter.
-        self._query = ''
-        self._selected_tags = set()
-        self._update_tags_treeview()
-        selection = self._tags_treeview.get_selection()
-        selection.unselect_all()
-        selection.select_path((0, ))
-        self._update_docs_iconview_wrapper(True)
 
     def _iter_selected_docs(self):
         paths = self._docs_iconview.get_selected_items()
