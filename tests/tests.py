@@ -257,7 +257,6 @@ class TestDigitalLibrary(unittest.TestCase):
         self.assertEqual(x.document_path, y.document_path)
         self.assertEqual(x.document_abspath, y.document_abspath)
         self.assertEqual(x.document_size, y.document_size)
-        self.assertEqual(x.thumbnail_path, y.thumbnail_path)
         self.assertEqual(x.small_thumbnail_abspath, y.small_thumbnail_abspath)
         self.assertEqual(x.normal_thumbnail_abspath, y.normal_thumbnail_abspath)
         self.assertEqual(x.large_thumbnail_abspath, y.large_thumbnail_abspath)

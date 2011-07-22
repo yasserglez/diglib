@@ -45,18 +45,22 @@ class Document(object):
 
     @property
     def small_thumbnail_abspath(self):
-        return self._get_thumbnail_abspath('small')
+        return (os.path.join(self._thumbnails_dir, self.small_thumbnail_path)
+                if self.small_thumbnail_path else self.small_thumbnail_path)
 
     @property
     def normal_thumbnail_abspath(self):
-        return self._get_thumbnail_abspath('normal')            
+        return (os.path.join(self._thumbnails_dir, self.normal_thumbnail_path)
+                if self.normal_thumbnail_path else self.normal_thumbnail_path)            
 
     @property
     def large_thumbnail_abspath(self):
-        return self._get_thumbnail_abspath('large')
+        return (os.path.join(self._thumbnails_dir, self.large_thumbnail_path)
+                if self.large_thumbnail_path else self.large_thumbnail_path)
 
     def __init__(self, hash_md5, hash_ssdeep, mime_type, document_path, 
-                 document_size, thumbnail_path, language_code, tags):
+                 document_size, small_thumbnail_path, normal_thumbnail_path, 
+                 large_thumbnail_path, language_code, tags):
         self.hash_md5 = hash_md5
         self.hash_ssdeep = hash_ssdeep
         self.mime_type = mime_type
@@ -64,7 +68,9 @@ class Document(object):
         self.document_path = document_path
         self.document_size = document_size
         self._thumbnails_dir = None # Set by DigitalLibrary.
-        self.thumbnail_path = thumbnail_path
+        self.small_thumbnail_path = small_thumbnail_path
+        self.normal_thumbnail_path = normal_thumbnail_path
+        self.large_thumbnail_path = large_thumbnail_path
         self.language_code = language_code
         self.tags = tags
 
@@ -73,10 +79,6 @@ class Document(object):
 
     def set_thumbnails_dir(self, thumbnails_dir):
         self._thumbnails_dir = thumbnails_dir
-
-    def _get_thumbnail_abspath(self, size_name):
-        return (os.path.join(self._thumbnails_dir, size_name, self.thumbnail_path)
-                if self.thumbnail_path else None)
 
 
 class DigitalLibrary(object):
@@ -96,7 +98,7 @@ class DigitalLibrary(object):
 
     # Documents whose similarity is equal or greater
     # than this threshold will be considered equals.
-    SSDEEP_THRESHOLD = 90
+    SSDEEP_THRESHOLD = 80
 
     # A document should satisfy at least one of the following conditions
     # to be considered retrievable. This should be an invariant for all
@@ -128,41 +130,49 @@ class DigitalLibrary(object):
         hash_ssdeep = ssdeep.hash(doc_data)
         self._check_duplicated(hash_md5, hash_ssdeep, doc_size)
         # Copy the document to the library.
-        path = map(lambda i: hash_md5[i-2:i], range(2, 32, 2))
+        path = os.path.join(*map(lambda i: hash_md5[i-4:i], range(4, 32 + 4, 4)))
         mime_type = self._magic.buffer(doc_data)
         if mime_type not in self.MIME_TYPES:
             raise error.DocumentNotSupported()
-        doc_path = os.path.join(*path) + self.MIME_TYPES[mime_type]
+        doc_path = path + self.MIME_TYPES[mime_type]
         doc_abspath = os.path.join(self._documents_dir, doc_path)
         if not os.path.exists(os.path.dirname(doc_abspath)):
             os.makedirs(os.path.dirname(doc_abspath))
         with open(doc_abspath, 'wb') as file:
             file.write(doc_data)
-        # Generate the thumbnails.
-        thumbnail_path = None
         handler = get_handler(doc_abspath, mime_type)
-        for size_name, size in (('small', self.THUMBNAIL_SIZE_SMALL),
-                                ('normal', self.THUMBNAIL_SIZE_NORMAL),
+        # Generate the thumbnails.
+        small_thumbnail_path = None
+        normal_thumbnail_path = None
+        large_thumbnail_path = None
+        for size_name, size in (('small', self.THUMBNAIL_SIZE_SMALL), 
+                                ('normal', self.THUMBNAIL_SIZE_NORMAL), 
                                 ('large', self.THUMBNAIL_SIZE_LARGE)):
             thumbnail_data = handler.get_thumbnail(size, size)
             if thumbnail_data:
-                thumbnail_path = os.path.join(*path) + '.png'
-                thumbnail_abspath = \
-                    os.path.join(self._thumbnails_dir, size_name, thumbnail_path)
+                thumbnail_path = os.path.join(size_name, path + '.png')
+                thumbnail_abspath = os.path.join(self._thumbnails_dir, thumbnail_path)
                 if not os.path.exists(os.path.dirname(thumbnail_abspath)):
                     os.makedirs(os.path.dirname(thumbnail_abspath))
                 with open(thumbnail_abspath, 'wb') as file:
                     file.write(thumbnail_data)
+                if size_name == 'small':
+                    small_thumbnail_path = thumbnail_path
+                elif size_name == 'normal':
+                    normal_thumbnail_path = thumbnail_path
+                elif size_name == 'large':
+                    large_thumbnail_path = thumbnail_path
         # Add the document to the database and the index.
         content = handler.get_content()
         metadata = handler.get_metadata()
         language_code = get_lang(content)
-        doc = Document(hash_md5, hash_ssdeep, mime_type, doc_path,
-                       doc_size, thumbnail_path, language_code, tags)
+        doc = Document(hash_md5, hash_ssdeep, mime_type, doc_path, 
+                       doc_size, small_thumbnail_path, normal_thumbnail_path, 
+                       large_thumbnail_path, language_code, tags)
         self._index.add_doc(doc, content, metadata) # To know the number of terms.
         # Check if the document can be retrieved with the available information.
         if not (len(doc.tags) >= self.MIN_TAGS or
-                self._index.get_doc_terms_count(doc.hash_md5) >= self.MIN_TERMS):            
+                self._index.get_doc_terms_count(doc.hash_md5) >= self.MIN_TERMS):
             self._index.delete_doc(hash_md5)
             raise error.DocumentNotRetrievable()
         self._database.add_doc(doc)

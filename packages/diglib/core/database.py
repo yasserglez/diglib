@@ -33,7 +33,7 @@ class Database(object):
 
     def get_doc(self, hash_md5):
         raise NotImplementedError()
-    
+
     # Get documents whose size is between the given values.
     def get_similar_docs(self, lower_size, upper_size):
         raise NotImplementedError()    
@@ -54,7 +54,7 @@ class Database(object):
 
     def rename_tag(self, old_name, new_name):
         raise NotImplementedError()
-    
+
     def update_tags(self, hash_md5, tags):
         raise NotImplementedError()
 
@@ -89,18 +89,23 @@ class SQLAlchemyDocument(SQLAlchemyBase):
     mime_type = Column(String, nullable=False)
     document_path = Column(String, nullable=False)
     document_size = Column(Integer, nullable=False)
-    thumbnail_path = Column(String)
+    small_thumbnail_path = Column(String)
+    normal_thumbnail_path = Column(String)
+    large_thumbnail_path = Column(String)
     language_code = Column(String, nullable=False)
     tags = relationship(SQLAlchemyTag, secondary='document_tags', backref='documents')
 
     def __init__(self, hash_md5, hash_ssdeep, mime_type, document_path, 
-                 document_size, thumbnail_path, language_code, tags):
+                 document_size, small_thumbnail_path, normal_thumbnail_path, 
+                 large_thumbnail_path, language_code, tags):
         self.hash_md5 = hash_md5
         self.hash_ssdeep = hash_ssdeep
         self.mime_type = mime_type
         self.document_path = document_path
         self.document_size = document_size
-        self.thumbnail_path = thumbnail_path
+        self.small_thumbnail_path = small_thumbnail_path
+        self.normal_thumbnail_path = normal_thumbnail_path
+        self.large_thumbnail_path = large_thumbnail_path
         self.language_code = language_code
         self.tags = tags
 
@@ -124,7 +129,8 @@ class SQLAlchemyDatabase(Database):
         sqlalchemy_doc = \
             SQLAlchemyDocument(doc.hash_md5, doc.hash_ssdeep, doc.mime_type,
                                doc.document_path, doc.document_size,
-                               doc.thumbnail_path, doc.language_code,
+                               doc.small_thumbnail_path, doc.normal_thumbnail_path,
+                               doc.large_thumbnail_path,doc.language_code, 
                                sqlalchemy_tags)
         session.add(sqlalchemy_doc)
         session.commit()
@@ -138,7 +144,10 @@ class SQLAlchemyDatabase(Database):
             tags = set([tag.name for tag in sqlalchemy_doc.tags])
             doc = Document(sqlalchemy_doc.hash_md5, sqlalchemy_doc.hash_ssdeep,
                            sqlalchemy_doc.mime_type, sqlalchemy_doc.document_path,
-                           sqlalchemy_doc.document_size, sqlalchemy_doc.thumbnail_path,
+                           sqlalchemy_doc.document_size,
+                           sqlalchemy_doc.small_thumbnail_path,
+                           sqlalchemy_doc.normal_thumbnail_path,
+                           sqlalchemy_doc.large_thumbnail_path,
                            sqlalchemy_doc.language_code, tags)
         else:
             doc = None # Document not found.
@@ -155,7 +164,10 @@ class SQLAlchemyDatabase(Database):
             tags = set([tag.name for tag in sqlalchemy_doc.tags])
             doc = Document(sqlalchemy_doc.hash_md5, sqlalchemy_doc.hash_ssdeep,
                            sqlalchemy_doc.mime_type, sqlalchemy_doc.document_path,
-                           sqlalchemy_doc.document_size, sqlalchemy_doc.thumbnail_path,
+                           sqlalchemy_doc.document_size,
+                           sqlalchemy_doc.small_thumbnail_path,
+                           sqlalchemy_doc.normal_thumbnail_path,
+                           sqlalchemy_doc.large_thumbnail_path,
                            sqlalchemy_doc.language_code, tags)
             docs.append(doc)
         session.close()
@@ -229,9 +241,9 @@ class SQLAlchemyDatabase(Database):
 
     def close(self):
         self._sessionmaker.close_all()
-        
+
     # Return a SQLAlchemyTag corresponding to the given tag name.
-    # The tag is added if it does not exists in the database. 
+    # The tag is added if it does not exists in the database.
     def _normalize_tag(self, session, tag):
         query = session.query(SQLAlchemyTag).filter_by(name=tag)
         sqlalchemy_tag = query.scalar()
