@@ -130,7 +130,7 @@ class SQLAlchemyDatabase(Database):
             SQLAlchemyDocument(doc.hash_md5, doc.hash_ssdeep, doc.mime_type,
                                doc.document_path, doc.document_size,
                                doc.small_thumbnail_path, doc.normal_thumbnail_path,
-                               doc.large_thumbnail_path,doc.language_code, 
+                               doc.large_thumbnail_path, doc.language_code, 
                                sqlalchemy_tags)
         session.add(sqlalchemy_doc)
         session.commit()
