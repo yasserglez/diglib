@@ -36,15 +36,12 @@ class Index(object):
     def delete_doc(self, hash_md5):
         raise NotImplementedError()    
 
-    def rename_tag(self, old_name, new_name):
+    def rename_tag(self, old_tag, new_tag):
         raise NotImplementedError()
 
     def update_tags(self, hash_md5, tags):
         raise NotImplementedError()
 
-    def delete_tag(self, tag):
-        raise NotImplementedError()
-    
     # Get the MD5 hashes of the documents with the given tags that match the query. 
     def search(self, query, tags, start=None, count=None):
         raise NotImplementedError()    
@@ -97,18 +94,17 @@ class XapianIndex(Index):
         self._index.delete_document(self.ID_PREFIX + hash_md5)
         self._index.flush()
 
-    def rename_tag(self, old_name, new_name):
-        old_term = self.TAG_PREFIX + old_name
-        if self._index.get_termfreq(old_term) > 0:
-            new_term = self.TAG_PREFIX + new_name
-            enquire = xapian.Enquire(self._index)
-            enquire.set_query(xapian.Query(old_term))
-            mset = enquire.get_mset(0, self._index.get_doccount())
-            for match in mset:
-                xapian_doc = match.document
-                xapian_doc.remove_term(old_term)
-                xapian_doc.add_boolean_term(new_term)
-                self._index.replace_document(xapian_doc.get_docid(), xapian_doc)
+    def rename_tag(self, old_tag, new_tag):
+        old_term = self.TAG_PREFIX + old_tag
+        new_term = self.TAG_PREFIX + new_tag
+        enquire = xapian.Enquire(self._index)
+        enquire.set_query(xapian.Query(old_term))
+        mset = enquire.get_mset(0, self._index.get_doccount())
+        for match in mset:
+            xapian_doc = match.document
+            xapian_doc.remove_term(old_term)
+            xapian_doc.add_boolean_term(new_term)
+            self._index.replace_document(xapian_doc.get_docid(), xapian_doc)
         self._index.flush()
 
     def update_tags(self, hash_md5, tags):
@@ -119,17 +115,6 @@ class XapianIndex(Index):
         for tag in tags:
             xapian_doc.add_boolean_term(self.TAG_PREFIX + tag)
         self._index.replace_document(xapian_doc.get_docid(), xapian_doc)
-        self._index.flush()
-
-    def delete_tag(self, tag):
-        term = self.TAG_PREFIX + tag
-        enquire = xapian.Enquire(self._index)
-        enquire.set_query(xapian.Query(term))
-        mset = enquire.get_mset(0, self._index.get_doccount())
-        for match in mset:
-            xapian_doc = match.document
-            xapian_doc.remove_term(term)
-            self._index.replace_document(xapian_doc.get_docid(), xapian_doc)
         self._index.flush()
 
     def search(self, query, tags, start=None, count=None):

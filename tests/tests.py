@@ -150,57 +150,28 @@ class TestDigitalLibrary(unittest.TestCase):
 
     def test_get_all_tags(self):
         self.assertSetEqual(self._library.get_all_tags(), set())
-        self._library.add_tag('a')
-        self._library.add_tag('b')
-        self._library.add_tag('c')
+        self.test_add_doc_txt()
         self.assertSetEqual(self._library.get_all_tags(), set('abc'))
 
-    def test_add_tag(self):
-        self._library.add_tag('a')
-        self.assertSetEqual(self._library.get_all_tags(), set('a'))
-
-    def test_add_tag_duplicated(self):
-        self._library.add_tag('a')
-        self.assertSetEqual(self._library.get_all_tags(), set('a'))
-        with self.assertRaises(error.TagDuplicated):
-            self._library.add_tag('a')
-
-    def test_delete_tag_free(self):
-        self._library.add_tag('a')
-        self._library.delete_tag('a')
-        self.assertSetEqual(self._library.get_all_tags(), set())
-        
-    def test_delete_tag_assigned(self):
+    def test_rename_tag(self):
         original = self.test_add_doc_txt()
-        self._library.delete_tag('c')
-        modified = self._library.get_doc(original.hash_md5)
-        self.assertSetEqual(modified.tags, set('ab'))
-        self.assertListEqual(self._library.search('', set('c')), [])
-
-    def test_delete_tag_not_retrievable(self):
-        doc_path = os.path.join(self._tests_dir, 'not-retrievable.txt')
-        self._library.add_doc(doc_path, set('a'))
-        with self.assertRaises(error.DocumentNotRetrievable):
-            self._library.delete_tag('a')
-
-    def test_rename_tag_free(self):
-        self._library.add_tag('a')
-        self._library.rename_tag('a', 'b')
-        self.assertSetEqual(self._library.get_all_tags(), set('b'))
-
-    def test_rename_tag_assigned(self):
-        original = self.test_add_doc_txt()
+        self.assertSetEqual(self._library.get_all_tags(), set('abc'))
         self._library.rename_tag('c', 'z')
+        self.assertSetEqual(self._library.get_all_tags(), set('abz'))
         modified = self._library.get_doc(original.hash_md5)
         self.assertSetEqual(modified.tags, set('abz'))
         self.assertListEqual(self._library.search('', set('c')), [])
         self.assertListEqual(self._library.search('', set('z')), [original.hash_md5])
-        
-    def test_rename_tag_duplicated(self):
-        self._library.add_tag('a')
-        self._library.add_tag('b')
-        with self.assertRaises(error.TagDuplicated):
-            self._library.rename_tag('b', 'a')    
+
+    def test_rename_tag_exists(self):
+        original = self.test_add_doc_txt()
+        self.assertSetEqual(self._library.get_all_tags(), set('abc'))
+        self._library.rename_tag('c', 'b')
+        self.assertSetEqual(self._library.get_all_tags(), set('ab'))
+        modified = self._library.get_doc(original.hash_md5)
+        self.assertSetEqual(modified.tags, set('ab'))
+        self.assertListEqual(self._library.search('', set('c')), [])
+        self.assertListEqual(self._library.search('', set('b')), [original.hash_md5])
 
     def test_update_tags(self):
         doc = self.test_add_doc_txt()
@@ -219,8 +190,6 @@ class TestDigitalLibrary(unittest.TestCase):
         self.test_add_doc_txt()
         self.test_add_doc_pdf()
         self.test_add_doc_djvu()
-        self._library.add_tag('e')
-        self.assertEqual(self._library.get_tag_freq('e'), 0.0)
         self.assertEqual(self._library.get_tag_freq('d'), 1.0/4.0)
         self.assertEqual(self._library.get_tag_freq('c'), 2.0/4.0)
         self.assertEqual(self._library.get_tag_freq('b'), 3.0/4.0)

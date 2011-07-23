@@ -103,7 +103,6 @@ class DigitalLibrary(object):
     # A document should satisfy at least one of the following conditions
     # to be considered retrievable. This should be an invariant for all
     # documents in the database.
-    MIN_TAGS = 1
     MIN_TERMS = 100
 
     LOCK = threading.RLock() # Shared by all instances of this class!
@@ -171,8 +170,7 @@ class DigitalLibrary(object):
                        large_thumbnail_path, language_code, tags)
         self._index.add_doc(doc, content, metadata) # To know the number of terms.
         # Check if the document can be retrieved with the available information.
-        if not (len(doc.tags) >= self.MIN_TAGS or
-                self._index.get_doc_terms_count(doc.hash_md5) >= self.MIN_TERMS):
+        if not doc.tags and self._index.get_doc_terms_count(doc.hash_md5) < self.MIN_TERMS:
             self._index.delete_doc(hash_md5)
             raise error.DocumentNotRetrievable()
         self._database.add_doc(doc)
@@ -206,14 +204,6 @@ class DigitalLibrary(object):
         self._index.delete_doc(hash_md5)
 
     @_synchronized(LOCK)
-    def add_tag(self, tag):
-        tag = self._normalize_tag(tag)
-        if tag not in self._database.get_all_tags():
-            self._database.add_tag(tag)
-        else:
-            raise error.TagDuplicated()            
-
-    @_synchronized(LOCK)
     def get_all_tags(self):
         return self._database.get_all_tags()
 
@@ -222,36 +212,20 @@ class DigitalLibrary(object):
         return self._database.get_tag_freq(tag)    
 
     @_synchronized(LOCK)
-    def rename_tag(self, old_name, new_name):
-        old_name = self._normalize_tag(old_name)
-        new_name = self._normalize_tag(new_name)
-        if new_name not in self._database.get_all_tags():
-            self._database.rename_tag(old_name, new_name)
-            self._index.rename_tag(old_name, new_name)
-        else:
-            raise error.TagDuplicated()
+    def rename_tag(self, old_tag, new_tag):
+        old_tag = self._normalize_tag(old_tag)
+        new_tag = self._normalize_tag(new_tag)
+        self._database.rename_tag(old_tag, new_tag)
+        self._index.rename_tag(old_tag, new_tag)
 
     @_synchronized(LOCK)
     def update_tags(self, hash_md5, tags):
         tags = set([self._normalize_tag(tag) for tag in tags])
-        if not (len(tags) >= self.MIN_TAGS or
-                self._index.get_doc_terms_count(hash_md5) >= self.MIN_TERMS):        
+        if not tags and self._index.get_doc_terms_count(hash_md5) < self.MIN_TERMS:
             raise error.DocumentNotRetrievable()
         else:
             self._database.update_tags(hash_md5, tags)
             self._index.update_tags(hash_md5, tags)
-
-    @_synchronized(LOCK)
-    def delete_tag(self, tag):
-        tag = self._normalize_tag(tag)
-        for hash_md5 in self.search('', set([tag])):
-            # Removing the tag results in documents that cannot be retrieved?
-            doc = self.get_doc(hash_md5)
-            if (len(doc.tags) == self.MIN_TAGS and
-                self._index.get_doc_terms_count(doc.hash_md5) < self.MIN_TERMS):
-                raise error.DocumentNotRetrievable()
-        self._database.delete_tag(tag)
-        self._index.delete_tag(tag)
 
     @_synchronized(LOCK)
     def search(self, query, tags, start=None, count=None):

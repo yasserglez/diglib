@@ -41,9 +41,6 @@ class Database(object):
     def delete_doc(self, hash_md5):
         raise NotImplementedError()
 
-    def add_tag(self, tag):
-        raise NotImplementedError()    
-
     # Get all tags in the database.
     def get_all_tags(self):
         raise NotImplementedError()
@@ -52,14 +49,11 @@ class Database(object):
     def get_tag_freq(self, tag):
         raise NotImplementedError()      
 
-    def rename_tag(self, old_name, new_name):
+    def rename_tag(self, old_tag, new_tag):
         raise NotImplementedError()
 
-    def update_tags(self, hash_md5, tags):
+    def update_tags(self, hash_md5, new_tags):
         raise NotImplementedError()
-
-    def delete_tag(self, tag):
-        raise NotImplementedError()    
 
     def close(self):
         raise NotImplementedError()
@@ -130,7 +124,7 @@ class SQLAlchemyDatabase(Database):
             SQLAlchemyDocument(doc.hash_md5, doc.hash_ssdeep, doc.mime_type,
                                doc.document_path, doc.document_size,
                                doc.small_thumbnail_path, doc.normal_thumbnail_path,
-                               doc.large_thumbnail_path, doc.language_code, 
+                               doc.large_thumbnail_path, doc.language_code,
                                sqlalchemy_tags)
         session.add(sqlalchemy_doc)
         session.commit()
@@ -138,10 +132,10 @@ class SQLAlchemyDatabase(Database):
 
     def get_doc(self, hash_md5):
         session = self._sessionmaker()
-        query = session.query(SQLAlchemyDocument).filter_by(hash_md5=hash_md5)
-        if query.count():
-            sqlalchemy_doc = query.first()
-            tags = set([tag.name for tag in sqlalchemy_doc.tags])
+        sqlalchemy_doc = session.query(SQLAlchemyDocument) \
+            .filter_by(hash_md5=hash_md5).scalar()
+        if sqlalchemy_doc:
+            tags = set([sqlalchemy_tag.name for sqlalchemy_tag in sqlalchemy_doc.tags])
             doc = Document(sqlalchemy_doc.hash_md5, sqlalchemy_doc.hash_ssdeep,
                            sqlalchemy_doc.mime_type, sqlalchemy_doc.document_path,
                            sqlalchemy_doc.document_size,
@@ -161,7 +155,7 @@ class SQLAlchemyDatabase(Database):
             .filter(SQLAlchemyDocument.document_size >= lower_size) \
             .filter(SQLAlchemyDocument.document_size <= upper_size)
         for sqlalchemy_doc in query.all():
-            tags = set([tag.name for tag in sqlalchemy_doc.tags])
+            tags = set([sqlalchemy_tag.name for sqlalchemy_tag in sqlalchemy_doc.tags])
             doc = Document(sqlalchemy_doc.hash_md5, sqlalchemy_doc.hash_ssdeep,
                            sqlalchemy_doc.mime_type, sqlalchemy_doc.document_path,
                            sqlalchemy_doc.document_size,
@@ -175,20 +169,13 @@ class SQLAlchemyDatabase(Database):
 
     def delete_doc(self, hash_md5):
         session = self._sessionmaker()
-        query = session.query(SQLAlchemyDocument).filter_by(hash_md5=hash_md5)
-        if query.count():
-            sqlalchemy_doc = query.first()
+        sqlalchemy_doc = session.query(SQLAlchemyDocument) \
+            .filter_by(hash_md5=hash_md5).scalar()
+        if sqlalchemy_doc:
             session.delete(sqlalchemy_doc)
             session.commit()
         session.close()
         
-    def add_tag(self, tag):
-        session = self._sessionmaker()
-        sqlalchemy_tag = SQLAlchemyTag(tag)
-        session.add(sqlalchemy_tag)
-        session.commit()
-        session.close()        
-
     def get_all_tags(self):
         tags = set()
         session = self._sessionmaker()
@@ -197,7 +184,7 @@ class SQLAlchemyDatabase(Database):
             tags.add(sqlalchemy_tag.name)
         session.close()
         return tags
-        
+
     def get_tag_freq(self, tag):
         session = self._sessionmaker()
         total_docs = session.query(SQLAlchemyDocument).count()
@@ -207,36 +194,38 @@ class SQLAlchemyDatabase(Database):
             tag_docs = len(sqlalchemy_tag.documents) if sqlalchemy_tag else 0
             return tag_docs / float(total_docs)
         else:
-            return 0.0     
+            return 0.0
 
-    def rename_tag(self, old_name, new_name):
+    def rename_tag(self, old_tag, new_tag):
         session = self._sessionmaker()
-        query = session.query(SQLAlchemyTag).filter_by(name=old_name)
-        if query.count():
-            sqlalchemy_tag = query.first()
-            sqlalchemy_tag.name = new_name
-            session.commit()
+        old_sqlalchemy_tag = session.query(SQLAlchemyTag) \
+            .filter_by(name=old_tag).scalar()
+        new_sqlalchemy_tag = session.query(SQLAlchemyTag) \
+            .filter_by(name=new_tag).scalar()
+        if new_sqlalchemy_tag:
+            for sqlalchemy_doc in old_sqlalchemy_tag.documents:
+                i = sqlalchemy_doc.tags.index(old_sqlalchemy_tag)
+                sqlalchemy_doc.tags[i] = new_sqlalchemy_tag
+            session.delete(old_sqlalchemy_tag)
         else:
-            sqlalchemy_tag = SQLAlchemyTag(sqlalchemy_tag)
-            session.add(sqlalchemy_tag)
-            session.commit()
-        session.close()
-
-    def update_tags(self, hash_md5, tags):
-        session = self._sessionmaker()
-        query = session.query(SQLAlchemyDocument).filter_by(hash_md5=hash_md5)
-        if query.count():
-            sqlalchemy_doc = query.first()
-            sqlalchemy_tags = self._normalize_tags(session, tags)
-            sqlalchemy_doc.tags = sqlalchemy_tags
-            session.commit()
-        session.close()
-
-    def delete_tag(self, tag):
-        session = self._sessionmaker()
-        sqlalchemy_tag = self._normalize_tag(session, tag)
-        session.delete(sqlalchemy_tag)
+            old_sqlalchemy_tag.name = new_tag
         session.commit()
+        session.close()
+
+    def update_tags(self, hash_md5, new_tags):
+        session = self._sessionmaker()
+        sqlalchemy_doc = session.query(SQLAlchemyDocument) \
+            .filter_by(hash_md5=hash_md5).scalar()
+        if sqlalchemy_doc:
+            old_tags = set([sqlalchemy_tag.name for sqlalchemy_tag in sqlalchemy_doc.tags])
+            removed_tags = old_tags.difference(new_tags)
+            sqlalchemy_doc.tags = self._normalize_tags(session, new_tags)
+            session.commit()
+        for tag in removed_tags:
+            if not self.get_tag_freq(tag):
+                sqlalchemy_tag = self._normalize_tag(session, tag)
+                session.delete(sqlalchemy_tag)
+                session.commit()
         session.close()
 
     def close(self):

@@ -42,9 +42,3 @@ class DocumentNotRetrievable(DocumentError):
 class DocumentNotSupported(DocumentError):
     pass
 
-
-class TagError(DigitalLibraryError):
-    pass
-
-class TagDuplicated(TagError):
-    pass
