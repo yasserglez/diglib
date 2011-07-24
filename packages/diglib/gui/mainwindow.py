@@ -66,9 +66,13 @@ class MainWindow(XMLWidget):
         self._normal_icons_menuitem = self._builder.get_object('normal_icons_menuitem')
         self._large_icons_menuitem = self._builder.get_object('large_icons_menuitem')
         self._open_docs_toolbutton = self._builder.get_object('open_docs_toolbutton')
+        self._open_docs_menuitem = self._builder.get_object('open_docs_menuitem')
         self._copy_docs_toolbutton = self._builder.get_object('copy_docs_toolbutton')
+        self._copy_docs_menuitem = self._builder.get_object('copy_docs_menuitem')
         self._delete_docs_toolbutton = self._builder.get_object('delete_docs_toolbutton')
+        self._delete_docs_menuitem = self._builder.get_object('delete_docs_menuitem')
         self._tag_docs_toolbutton = self._builder.get_object('tag_docs_toolbutton')
+        self._tag_docs_menuitem = self._builder.get_object('tag_docs_menuitem')
         self._search_entry = SearchEntry()
         # Other instance attributes.
         self._library = library
@@ -236,8 +240,8 @@ class MainWindow(XMLWidget):
         common_tags = None
         for hash_md5 in self._iter_selected_docs():
             doc_tags = self._library.get_doc(hash_md5).tags
-            common_tags = doc_tags.intersection(common_tags) \
-                if common_tags else doc_tags
+            common_tags = doc_tags if common_tags is None \
+                else doc_tags.intersection(common_tags)
         dialog = EditTagsDialog(common_tags)
         response = dialog.run()
         edited_tags = dialog.get_tags()
@@ -245,11 +249,23 @@ class MainWindow(XMLWidget):
         if response == gtk.RESPONSE_OK and edited_tags != common_tags:
             removed_tags = common_tags.difference(edited_tags)
             added_tags = edited_tags.difference(common_tags)
-            for hash_md5 in self._iter_selected_docs():
-                doc_tags = self._library.get_doc(hash_md5).tags
-                doc_tags.difference_update(removed_tags)
-                doc_tags.update(added_tags)
-                self._library.update_tags(hash_md5, doc_tags)
+            try:
+                for hash_md5 in self._iter_selected_docs():
+                    doc_tags = self._library.get_doc(hash_md5).tags
+                    doc_tags.difference_update(removed_tags)
+                    doc_tags.update(added_tags)
+                    self._library.update_tags(hash_md5, doc_tags)
+            except error.DocumentNotRetrievable:
+                message = 'Could not remove a tag from a document.'
+                secondary_text = 'If the tag is removed, the ' \
+                    'document could not be retrieved.'
+                dialog = gtk.MessageDialog(self._main_window,
+                                           gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR,
+                                           gtk.BUTTONS_OK, message)
+                dialog.format_secondary_text(secondary_text)
+                dialog.run()
+                dialog.destroy()
+            self._update_tags_treeview(True)
 
     def on_close_menuitem_activate(self, menuitem):
         self._main_window.destroy()
@@ -318,11 +334,15 @@ class MainWindow(XMLWidget):
 
     def on_docs_iconview_selection_changed(self, iconview):
         selected_docs = list(self._iter_selected_docs())
-        self._docs_menuitem.set_sensitive(len(selected_docs) > 0)
-        self._open_docs_toolbutton.set_sensitive(len(selected_docs) > 0)
-        self._copy_docs_toolbutton.set_sensitive(len(selected_docs) > 0)
-        self._delete_docs_toolbutton.set_sensitive(len(selected_docs) > 0)
-        self._tag_docs_toolbutton.set_sensitive(len(selected_docs) > 0)
+        sensitive = len(selected_docs) > 0
+        self._open_docs_toolbutton.set_sensitive(sensitive)
+        self._open_docs_menuitem.set_sensitive(sensitive)
+        self._copy_docs_toolbutton.set_sensitive(sensitive)
+        self._copy_docs_menuitem.set_sensitive(sensitive)
+        self._delete_docs_toolbutton.set_sensitive(sensitive)
+        self._delete_docs_menuitem.set_sensitive(sensitive)
+        self._tag_docs_toolbutton.set_sensitive(sensitive)
+        self._tag_docs_menuitem.set_sensitive(sensitive)
 
     def _update_tags_treeview(self, force_update_docs=False):
         selected_tags = set(self._iter_selected_tags()) # Remember the selection.

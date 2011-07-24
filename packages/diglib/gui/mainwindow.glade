@@ -133,7 +133,6 @@
             <child>
               <object class="GtkMenuItem" id="docs_menuitem">
                 <property name="visible">True</property>
-                <property name="sensitive">False</property>
                 <property name="can_focus">False</property>
                 <property name="use_action_appearance">False</property>
                 <property name="label" translatable="yes">_Documents</property>
@@ -145,6 +144,7 @@
                     <child>
                       <object class="GtkMenuItem" id="open_docs_menuitem">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_Open</property>
@@ -155,6 +155,7 @@
                     <child>
                       <object class="GtkMenuItem" id="copy_docs_menuitem">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_Copy</property>
@@ -165,6 +166,7 @@
                     <child>
                       <object class="GtkMenuItem" id="delete_docs_menuitem">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">_Delete</property>
@@ -175,6 +177,7 @@
                     <child>
                       <object class="GtkMenuItem" id="tag_docs_menuitem">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Edit _Tags...</property>
