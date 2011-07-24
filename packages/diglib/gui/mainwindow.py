@@ -30,7 +30,7 @@ from diglib.gui.util import open_file, get_image
 from diglib.gui.xmlwidget import XMLWidget
 from diglib.gui.searchentry import SearchEntry
 from diglib.gui.aboutdialog import AboutDialog
-from diglib.gui.addtagdialog import AddTagDialog
+from diglib.gui.edittagsdialog import EditTagsDialog
 from diglib.gui.importfiledialog import ImportFileDialog
 from diglib.gui.importdirwindow import ImportDirectoryWindow
 
@@ -58,21 +58,17 @@ class MainWindow(XMLWidget):
         self._main_window = self._builder.get_object('main_window')
         self._tags_treeview = self._builder.get_object('tags_treeview')
         self._tags_scrolledwindow = self._builder.get_object('tags_scrolledwindow')
-        self._tags_menu = self._builder.get_object('tags_menu')
         self._docs_iconview = self._builder.get_object('docs_iconview')
         self._docs_menu = self._builder.get_object('docs_menu')
-        self._doc_tags_menu = self._builder.get_object('doc_tags_menu')
         self._statusbar = self._builder.get_object('statusbar')
         self._docs_menuitem = self._builder.get_object('docs_menuitem')
         self._small_icons_menuitem = self._builder.get_object('small_icons_menuitem')
         self._normal_icons_menuitem = self._builder.get_object('normal_icons_menuitem')
         self._large_icons_menuitem = self._builder.get_object('large_icons_menuitem')
-        self._rename_tag_menuitem = self._builder.get_object('rename_tag_menuitem')
-        self._delete_tags_menuitem = self._builder.get_object('delete_tags_menuitem')
-        self._delete_tags_toolbutton = self._builder.get_object('delete_tags_toolbutton')
         self._open_docs_toolbutton = self._builder.get_object('open_docs_toolbutton')
         self._copy_docs_toolbutton = self._builder.get_object('copy_docs_toolbutton')
         self._delete_docs_toolbutton = self._builder.get_object('delete_docs_toolbutton')
+        self._tag_docs_toolbutton = self._builder.get_object('tag_docs_toolbutton')
         self._search_entry = SearchEntry()
         # Other instance attributes.
         self._library = library
@@ -235,58 +231,25 @@ class MainWindow(XMLWidget):
                 for hash_md5 in selected_docs:
                     self._library.delete_doc(hash_md5)
                 self._update_tags_treeview(True)
-
-    def on_delete_tags(self, *args):
-        selected_tags = list(self._iter_selected_tags())
-        num_tags = len(selected_tags)
-        if num_tags > 0:
-            message = 'Delete the %s?' % \
-                (('%s selected tags' % num_tags)
-                 if num_tags > 1 else 'selected tag')
-            secondary_text = \
-                'The documents associated with the %s will not be removed.' % \
-                    ('tags' if num_tags > 1 else 'tag')
-            dialog = gtk.MessageDialog(self._main_window, 
-                                       gtk.DIALOG_MODAL, gtk.MESSAGE_QUESTION, 
-                                       gtk.BUTTONS_YES_NO, message)
-            dialog.format_secondary_text(secondary_text)
-            response = dialog.run()
-            dialog.destroy()
-            if response == gtk.RESPONSE_YES:
-                try:
-                    for tag in selected_tags:
-                        self._library.delete_tag(tag)
-                except error.DocumentNotRetrievable:
-                    message = 'Could not delete the tag "%s".' % tag
-                    secondary_text = 'If the tag is deleted at least ' \
-                        'one document could not be retrieved.'
-                    dialog = gtk.MessageDialog(self._main_window,
-                                               gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR,
-                                               gtk.BUTTONS_OK, message)
-                    dialog.format_secondary_text(secondary_text)
-                    dialog.run()
-                    dialog.destroy()
-                self._update_tags_treeview(True)
-
-    def on_add_tag(self, *args):
-        dialog = AddTagDialog()
+                
+    def on_tag_docs(self, *args):
+        common_tags = None
+        for hash_md5 in self._iter_selected_docs():
+            doc_tags = self._library.get_doc(hash_md5).tags
+            common_tags = doc_tags.intersection(common_tags) \
+                if common_tags else doc_tags
+        dialog = EditTagsDialog(common_tags)
         response = dialog.run()
-        tag = dialog.get_tag()
+        edited_tags = dialog.get_tags()
         dialog.destroy()
-        if response == gtk.RESPONSE_ACCEPT:
-            try:
-                self._library.add_tag(tag)
-            except error.TagDuplicated:
-                message = 'Could not add the tag "%s".' % tag
-                secondary_text = 'The tag already exists in the database.'
-                dialog = gtk.MessageDialog(self._main_window,
-                                           gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR,
-                                           gtk.BUTTONS_OK, message)
-                dialog.format_secondary_text(secondary_text)
-                dialog.run()
-                dialog.destroy()
-            else:
-                self._update_tags_treeview()
+        if response == gtk.RESPONSE_OK and edited_tags != common_tags:
+            removed_tags = common_tags.difference(edited_tags)
+            added_tags = edited_tags.difference(common_tags)
+            for hash_md5 in self._iter_selected_docs():
+                doc_tags = self._library.get_doc(hash_md5).tags
+                doc_tags.difference_update(removed_tags)
+                doc_tags.update(added_tags)
+                self._library.update_tags(hash_md5, doc_tags)
 
     def on_close_menuitem_activate(self, menuitem):
         self._main_window.destroy()
@@ -302,29 +265,6 @@ class MainWindow(XMLWidget):
         else:
             self._tags_scrolledwindow.hide()
 
-    def on_tag_menuitem_toggled(self, checkmenuitem):
-        tag = checkmenuitem.get_label()
-        docs = [self._library.get_doc(hash_md5) 
-                for hash_md5 in self._iter_selected_docs()]
-        try:
-            for doc in docs:
-                if checkmenuitem.get_active():
-                    doc.tags.add(tag)
-                else:
-                    doc.tags.discard(tag)
-                self._library.update_tags(doc.hash_md5, doc.tags)
-        except error.DocumentNotRetrievable:
-            message = 'Could not remove the tag "%s".' % tag
-            secondary_text = 'If the tag is removed from one of the ' \
-                'selected documents it could not be retrieved.'
-            dialog = gtk.MessageDialog(self._main_window,
-                                       gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR,
-                                       gtk.BUTTONS_OK, message)
-            dialog.format_secondary_text(secondary_text)
-            dialog.run()
-            dialog.destroy()
-        self._update_tags_treeview()
-
     def on_icons_size_menuitem_toggled(self, radiomenuitem, new_size):
         if radiomenuitem.get_active() and self._docs_icon_size != new_size:
             self._docs_icon_size = new_size
@@ -337,28 +277,6 @@ class MainWindow(XMLWidget):
             self._docs_icon_size = new_size
             self._update_icons_size_widgets()
             self._update_docs_iconview_wrapper(True)
-
-    def on_rename_tag_menuitem_activate(self, menuitem):
-        selection = self._tags_treeview.get_selection()
-        tags_liststore, paths = selection.get_selected_rows()
-        for path in paths:
-            iter = tags_liststore.get_iter(path)
-            type = tags_liststore.get_value(iter, self.TAGS_TREEVIEW_COLUMN_TYPE)
-            if type == self.TAGS_TREEVIEW_ROW_TAG:
-                self._tags_treeview.set_cursor(path, self._tags_treeview.get_column(0), True)
-                break # Rename the first selected tag.
-
-    def on_tags_treeview_button_press_event(self, treeview, event):
-        if event.button == 3: # Right button.
-            path = treeview.get_path_at_pos(int(event.x), int(event.y))
-            if path:
-                path = path[0]
-                selection = treeview.get_selection()
-                if not selection.path_is_selected(path):    
-                    selection.unselect_all()
-                    selection.select_path(path)
-                self._tags_menu.popup(None, None, None, event.button, event.time)
-                self._tags_menu.show()
 
     def on_docs_iconview_button_press_event(self, iconview, event):
         if event.button == 3: # Right button.
@@ -383,25 +301,10 @@ class MainWindow(XMLWidget):
         new_name = new_name.strip()
         old_name = self._tags_liststore.get_value(iter, self.TAGS_TREEVIEW_COLUMN_TAG)
         if old_name != new_name:
-            try:
-                self._library.rename_tag(old_name, new_name)
-            except error.TagDuplicated:
-                message = 'Could not rename the tag "%s".' % old_name
-                secondary_text = 'The tag "%s" exists in the database.' % new_name
-                dialog = gtk.MessageDialog(self._main_window,
-                                           gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR,
-                                           gtk.BUTTONS_OK, message)
-                dialog.format_secondary_text(secondary_text)
-                dialog.run()
-                dialog.destroy()
-            else:
-                self._update_tags_treeview()
+            self._library.rename_tag(old_name, new_name)
+            self._update_tags_treeview()
 
     def on_tags_treeview_selection_changed(self, *args):
-        selected_tags = list(self._iter_selected_tags())
-        self._rename_tag_menuitem.set_sensitive(len(selected_tags) == 1)
-        self._delete_tags_menuitem.set_sensitive(len(selected_tags) > 0)
-        self._delete_tags_toolbutton.set_sensitive(len(selected_tags) > 0)
         if self._search_timeout_id > 0:
             gobject.source_remove(self._search_timeout_id)
         self._search_timeout_id = gobject.timeout_add(self._search_timeout, 
@@ -410,8 +313,8 @@ class MainWindow(XMLWidget):
     def on_search_entry_changed(self, *tags):
         if self._search_timeout_id > 0:
             gobject.source_remove(self._search_timeout_id)
-        self._search_timeout_id = gobject.timeout_add(self._search_timeout, 
-                                                      self._search_timeout_callback)        
+        self._search_timeout_id = gobject.timeout_add(self._search_timeout,
+                                                      self._search_timeout_callback)
 
     def on_docs_iconview_selection_changed(self, iconview):
         selected_docs = list(self._iter_selected_docs())
@@ -419,26 +322,7 @@ class MainWindow(XMLWidget):
         self._open_docs_toolbutton.set_sensitive(len(selected_docs) > 0)
         self._copy_docs_toolbutton.set_sensitive(len(selected_docs) > 0)
         self._delete_docs_toolbutton.set_sensitive(len(selected_docs) > 0)
-        self._update_doc_tags_menu()
-
-    def _update_doc_tags_menu(self):
-        callback = lambda menuitem: self._doc_tags_menu.remove(menuitem)
-        self._doc_tags_menu.foreach(callback)
-        tag_sets = [self._library.get_doc(hash_md5).tags
-                    for hash_md5 in self._iter_selected_docs()]
-        if tag_sets:
-            first_set = tag_sets[0]
-            other_sets = tag_sets[1:]
-            active_tags = first_set.intersection(*other_sets)
-            for row in self._tags_liststore:
-                if row[self.TAGS_TREEVIEW_COLUMN_TYPE] == self.TAGS_TREEVIEW_ROW_TAG:
-                    tag = row[self.TAGS_TREEVIEW_COLUMN_TAG]
-                    menuitem = gtk.CheckMenuItem(tag)
-                    if tag in active_tags:
-                        menuitem.activate()
-                    menuitem.connect('toggled', self.on_tag_menuitem_toggled)
-                    self._doc_tags_menu.append(menuitem)
-            self._doc_tags_menu.show_all()
+        self._tag_docs_toolbutton.set_sensitive(len(selected_docs) > 0)
 
     def _update_tags_treeview(self, force_update_docs=False):
         selected_tags = set(self._iter_selected_tags()) # Remember the selection.
@@ -476,7 +360,6 @@ class MainWindow(XMLWidget):
             selection.unselect_all()
             selection.select_path((0, ))
         self._update_docs_iconview_wrapper(force_update_docs)
-        self._update_doc_tags_menu()
 
     def _update_docs_iconview_wrapper(self, force=False):
         if (force or self._query != self._old_query or

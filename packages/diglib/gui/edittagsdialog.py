@@ -18,12 +18,17 @@
 
 import gtk
 
+from diglib.core.util import text_from_tags, tags_from_text
 
-class AddTagDialog(gtk.Dialog):
 
-    def __init__(self):
-        super(AddTagDialog, self).__init__()
-        self.set_title('Add Tag')
+class EditTagsDialog(gtk.Dialog):
+
+    def __init__(self, tags):
+        super(EditTagsDialog, self).__init__()
+        # Other instance attributes.
+        self._tags = tags
+        # Initialize widgets.
+        self.set_title('Edit Tags')
         self.set_resizable(False)
         self.set_modal(True)
         self.set_border_width(12)
@@ -31,25 +36,22 @@ class AddTagDialog(gtk.Dialog):
         content_area.set_spacing(18)
         hbox = gtk.HBox()
         hbox.set_spacing(12)
-        label = gtk.Label('Tag:')
+        label = gtk.Label('Tags:')
         hbox.pack_start(label)
-        tag_entry = gtk.Entry()
-        tag_entry.connect('changed', self.on_tag_entry_changed)
-        hbox.pack_start(tag_entry)
+        tags_entry = gtk.Entry()
+        tags_entry.connect('changed', self.on_tags_entry_changed)
+        tags_entry.set_text(text_from_tags(self._tags))
+        hbox.pack_start(tags_entry)
         content_area.pack_end(hbox)
-        hbox.show_all()
+        content_area.show_all()
         self.add_button('Cancel', gtk.RESPONSE_CANCEL)
-        self._add_button = self.add_button('Add', gtk.RESPONSE_ACCEPT)
+        self._add_button = self.add_button('Edit', gtk.RESPONSE_OK)
         self._add_button.set_property('can-default', True)
         self._add_button.grab_default()
-        self._add_button.set_sensitive(False)
-        self.set_default_response(gtk.RESPONSE_ACCEPT)
-        self._tag = None
+        self.set_default_response(gtk.RESPONSE_OK)
 
-    def get_tag(self):
-        return self._tag
+    def get_tags(self):
+        return self._tags
 
-    def on_tag_entry_changed(self, entry):
-        self._tag = entry.get_text().strip()
-        if self._tag:
-            self._add_button.set_sensitive(True)
+    def on_tags_entry_changed(self, tags_entry):
+        self._tags = tags_from_text(tags_entry.get_text())

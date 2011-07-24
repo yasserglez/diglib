@@ -24,18 +24,14 @@ def tags_from_text(text):
     # so they may contain commas.
     if not text:
         return set()
-    # Special case - if there are no commas or double quotes in the
-    # input, we don't *do* a recall... I mean, we know we only need to
-    # split on spaces.
+    # If there are no commas or double quotes in the input,
+    # we only need to split on spaces.
     if ',' not in text and '"' not in text:
-        words = list(set(_split_strip(text, ' ')))
-        words.sort()
-        return words
-
-    words = []
-    buffer = []
-    # Defer splitting of non-quoted sections until we know if there are
-    # any unquoted commas.
+        words = _split_strip(text, ' ')
+        return set(words)
+    words, buffer = [], []
+    # Defer splitting of non-quoted sections until we know 
+    # if there are any unquoted commas.
     to_be_split = []
     saw_loose_comma = False
     open_quote = False
@@ -47,7 +43,7 @@ def tags_from_text(text):
                 if buffer:
                     to_be_split.append(''.join(buffer))
                     buffer = []
-                # Find the matching quote
+                # Find the matching quote.
                 open_quote = True
                 c = i.next()
                 while c != '"':
@@ -64,8 +60,8 @@ def tags_from_text(text):
                     saw_loose_comma = True
                 buffer.append(c)
     except StopIteration:
-        # If we were parsing an open quote which was never closed treat
-        # the buffer as unquoted.
+        # If we were parsing an open quote which was never closed 
+        # treat the buffer as unquoted.
         if buffer:
             if open_quote and ',' in buffer:
                 saw_loose_comma = True
@@ -115,7 +111,9 @@ def text_from_tags(tags):
 def _split_strip(text, delimiter=','):
     # Splits text on delimiter, stripping each resulting string
     # and returning a list of non-empty strings.
-    if not text:
-        return []
-    words = [word.strip() for word in text.split(delimiter)]
-    return [word for word in words if word]
+    words = []
+    for word in text.split(delimiter):
+        word = word.strip()
+        if word:
+            words.append(word)
+    return words

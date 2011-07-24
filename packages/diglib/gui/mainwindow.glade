@@ -131,53 +131,6 @@
               </object>
             </child>
             <child>
-              <object class="GtkMenuItem" id="tags_menuitem">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="use_action_appearance">False</property>
-                <property name="label" translatable="yes">_Tags</property>
-                <property name="use_underline">True</property>
-                <child type="submenu">
-                  <object class="GtkMenu" id="tags_menu">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <child>
-                      <object class="GtkMenuItem" id="add_tag_menuitem">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="use_action_appearance">False</property>
-                        <property name="label" translatable="yes">_Add</property>
-                        <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_add_tag" swapped="no"/>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkMenuItem" id="rename_tag_menuitem">
-                        <property name="visible">True</property>
-                        <property name="sensitive">False</property>
-                        <property name="can_focus">False</property>
-                        <property name="use_action_appearance">False</property>
-                        <property name="label" translatable="yes">_Rename</property>
-                        <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_rename_tag_menuitem_activate" swapped="no"/>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkMenuItem" id="delete_tags_menuitem">
-                        <property name="visible">True</property>
-                        <property name="sensitive">False</property>
-                        <property name="can_focus">False</property>
-                        <property name="use_action_appearance">False</property>
-                        <property name="label" translatable="yes">_Delete</property>
-                        <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_delete_tags" swapped="no"/>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-              </object>
-            </child>
-            <child>
               <object class="GtkMenuItem" id="docs_menuitem">
                 <property name="visible">True</property>
                 <property name="sensitive">False</property>
@@ -220,18 +173,13 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkMenuItem" id="doc_tags_menuitem">
+                      <object class="GtkMenuItem" id="tag_docs_menuitem">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_action_appearance">False</property>
-                        <property name="label" translatable="yes">_Tags</property>
+                        <property name="label" translatable="yes">Edit _Tags...</property>
                         <property name="use_underline">True</property>
-                        <child type="submenu">
-                          <object class="GtkMenu" id="doc_tags_menu">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                          </object>
-                        </child>
+                        <signal name="activate" handler="on_tag_docs" swapped="no"/>
                       </object>
                     </child>
                   </object>
@@ -346,50 +294,6 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolButton" id="add_tag_toolbutton">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Add tag</property>
-                <property name="use_action_appearance">False</property>
-                <property name="label" translatable="yes">Add Tag</property>
-                <property name="use_underline">True</property>
-                <property name="stock_id">diglib-tag-add</property>
-                <signal name="clicked" handler="on_add_tag" swapped="no"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">True</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkToolButton" id="delete_tags_toolbutton">
-                <property name="visible">True</property>
-                <property name="sensitive">False</property>
-                <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Delete tags</property>
-                <property name="use_action_appearance">False</property>
-                <property name="label" translatable="yes">Delete Tags</property>
-                <property name="use_underline">True</property>
-                <property name="stock_id">diglib-tag-delete</property>
-                <signal name="clicked" handler="on_delete_tags" swapped="no"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">True</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkSeparatorToolItem" id="separator6">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="use_action_appearance">False</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">True</property>
-              </packing>
-            </child>
-            <child>
               <object class="GtkToolButton" id="open_docs_toolbutton">
                 <property name="visible">True</property>
                 <property name="sensitive">False</property>
@@ -434,6 +338,23 @@
                 <property name="use_underline">True</property>
                 <property name="stock_id">diglib-document-delete</property>
                 <signal name="clicked" handler="on_delete_docs" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="tag_docs_toolbutton">
+                <property name="visible">True</property>
+                <property name="sensitive">False</property>
+                <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Edit tags</property>
+                <property name="use_action_appearance">False</property>
+                <property name="label" translatable="yes">Edit Tags</property>
+                <property name="use_underline">True</property>
+                <property name="stock_id">diglib-document-tag</property>
+                <signal name="clicked" handler="on_tag_docs" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -491,7 +412,6 @@
                   <object class="GtkTreeView" id="tags_treeview">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <signal name="button-press-event" handler="on_tags_treeview_button_press_event" swapped="no"/>
                   </object>
                 </child>
               </object>
