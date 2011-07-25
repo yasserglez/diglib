@@ -391,7 +391,6 @@ class MainWindow(XMLWidget):
             with self._thread_lock:
                 self._thread_abort = True
             self._thread.join()
-            gtk.gdk.threads_enter()
             self._thread_abort = False # No lock required.
             self._thread = threading.Thread(target=self._update_docs_iconview,
                                             args=(self._query, self._selected_tags))
@@ -471,7 +470,6 @@ class MainWindow(XMLWidget):
         self._selected_tags = set(self._iter_selected_tags())
         self._search_timeout_id = 0
         self._update_docs_iconview_wrapper()
-        return False # Do not call the function again.
 
     def _iter_selected_docs(self):
         paths = self._docs_iconview.get_selected_items()
