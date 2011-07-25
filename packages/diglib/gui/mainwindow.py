@@ -391,6 +391,7 @@ class MainWindow(XMLWidget):
             with self._thread_lock:
                 self._thread_abort = True
             self._thread.join()
+            gtk.gdk.threads_enter()
             self._thread_abort = False # No lock required.
             self._thread = threading.Thread(target=self._update_docs_iconview,
                                             args=(self._query, self._selected_tags))
