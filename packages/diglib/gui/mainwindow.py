@@ -106,7 +106,7 @@ class MainWindow(XMLWidget):
         icon_size_toolitem.show_all()
         # The search text entry.
         search_toolitem = self._builder.get_object('search_toolitem')
-        self._search_entry.set_width_chars(35)
+        self._search_entry.set_width_chars(40)
         self._search_entry.connect('changed', self.on_search_entry_changed)
         search_toolitem.add(self._search_entry)
         search_toolitem.show_all()

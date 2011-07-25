@@ -32,6 +32,7 @@ class EditTagsDialog(gtk.Dialog):
         self.set_resizable(False)
         self.set_modal(True)
         self.set_border_width(12)
+        self.set_default_response(gtk.RESPONSE_OK)
         content_area = self.get_content_area()
         content_area.set_spacing(18)
         hbox = gtk.HBox()
@@ -40,15 +41,17 @@ class EditTagsDialog(gtk.Dialog):
         hbox.pack_start(label)
         tags_entry = gtk.Entry()
         tags_entry.connect('changed', self.on_tags_entry_changed)
+        tags_entry.set_width_chars(40)
         tags_entry.set_text(text_from_tags(self._tags))
         hbox.pack_start(tags_entry)
         content_area.pack_end(hbox)
         content_area.show_all()
         self.add_button('Cancel', gtk.RESPONSE_CANCEL)
         self._add_button = self.add_button('Edit', gtk.RESPONSE_OK)
+        self._add_button.set_property('can-focus', True)
+        self._add_button.grab_focus()
         self._add_button.set_property('can-default', True)
         self._add_button.grab_default()
-        self.set_default_response(gtk.RESPONSE_OK)
 
     def get_tags(self):
         return self._tags
