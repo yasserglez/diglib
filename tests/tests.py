@@ -139,7 +139,15 @@ class TestDigitalLibrary(unittest.TestCase):
 
     def test_delete_doc(self):
         pdf_doc = self.test_add_doc_pdf()
+        doc_path = pdf_doc.document_abspath
+        small_thumbnail = pdf_doc.small_thumbnail_abspath
+        normal_thumbnail = pdf_doc.normal_thumbnail_abspath
+        large_thumbnail = pdf_doc.large_thumbnail_abspath
         self._library.delete_doc(pdf_doc.hash_md5)
+        self.assertFalse(os.path.exists(doc_path))
+        self.assertFalse(os.path.exists(small_thumbnail))
+        self.assertFalse(os.path.exists(normal_thumbnail))
+        self.assertFalse(os.path.exists(large_thumbnail))
         with self.assertRaises(error.DocumentNotFound):
             self._library.get_doc(pdf_doc.hash_md5)
 
