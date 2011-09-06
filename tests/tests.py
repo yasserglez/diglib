@@ -170,6 +170,15 @@ class TestDigitalLibrary(unittest.TestCase):
         self.assertSetEqual(modified.tags, set('abz'))
         self.assertListEqual(self._library.search('', set('c')), [])
         self.assertListEqual(self._library.search('', set('z')), [original.hash_md5])
+        
+    def test_rename_tag_tilde(self):
+        original = self.test_add_doc_txt()
+        self.assertSetEqual(self._library.get_all_tags(), set('abc'))
+        self._library.rename_tag('a', u'á')
+        self.assertSetEqual(self._library.get_all_tags(), set(u'ábc'))
+        modified = self._library.get_doc(original.hash_md5)
+        self.assertSetEqual(modified.tags, set(u'ábc'))
+        self.assertListEqual(self._library.search('', set(u'á')), [original.hash_md5])        
 
     def test_rename_tag_exists(self):
         original = self.test_add_doc_txt()
@@ -186,6 +195,11 @@ class TestDigitalLibrary(unittest.TestCase):
         self.assertListEqual(self._library.search('', set('xyz')), [])
         self._library.update_tags(doc.hash_md5, set('xyz'))
         self.assertListEqual(self._library.search('', set('xyz')), [doc.hash_md5])
+        
+    def test_update_tags_tildes(self):
+        doc = self.test_add_doc_txt()
+        self._library.update_tags(doc.hash_md5, set(u'áéíóóñ'))
+        self.assertListEqual(self._library.search('', set(u'áéíóóñ')), [doc.hash_md5])        
 
     def test_update_tags_not_retrievable(self):
         doc_path = os.path.join(self._tests_dir, 'not-retrievable.txt')

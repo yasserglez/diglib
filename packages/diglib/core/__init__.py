@@ -262,4 +262,8 @@ class DigitalLibrary(object):
                 raise error.DocumentDuplicatedSimilar()
 
     def _normalize_tag(self, tag):
-        return tag.strip().lower()
+        tag = tag.strip().lower()
+        if not isinstance(tag, unicode):
+            tag = tag.decode('utf-8')
+        return tag
+        
