@@ -172,14 +172,21 @@ class DigitalLibrary(object):
         doc = Document(hash_md5, hash_ssdeep, mime_type, doc_path, 
                        doc_size, small_thumbnail_path, normal_thumbnail_path, 
                        large_thumbnail_path, language_code, tags)
+        doc.set_documents_dir(self._documents_dir)
+        doc.set_thumbnails_dir(self._thumbnails_dir)
         self._index.add_doc(doc, content, metadata) # To know the number of terms.
         # Check if the document can be retrieved with the available information.
         if not doc.tags and self._index.get_doc_terms_count(doc.hash_md5) < self.MIN_TERMS:
             self._index.delete_doc(hash_md5)
+            os.remove(doc.document_abspath)
+            if doc.small_thumbnail_abspath:
+                os.remove(doc.small_thumbnail_abspath)
+            if doc.normal_thumbnail_abspath:
+                os.remove(doc.normal_thumbnail_abspath)
+            if doc.large_thumbnail_abspath:
+                os.remove(doc.large_thumbnail_abspath)
             raise error.DocumentNotRetrievable()
         self._database.add_doc(doc)
-        doc.set_documents_dir(self._documents_dir)
-        doc.set_thumbnails_dir(self._thumbnails_dir)
         return doc
 
     @_synchronized(LOCK)
