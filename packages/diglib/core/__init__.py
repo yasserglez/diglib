@@ -113,6 +113,7 @@ class DigitalLibrary(object):
             os.makedirs(library_dir)
         self._index = index_class(os.path.join(library_dir, 'index'))
         self._database = database_class(os.path.join(library_dir, 'database.db'))
+        self._dir_levels = 3
         self._documents_dir = os.path.join(library_dir, 'documents')
         self._thumbnails_dir = os.path.join(library_dir, 'thumbnails')
         self._magic = magic.open(magic.MAGIC_MIME_TYPE | magic.MAGIC_NO_CHECK_TOKENS)
@@ -129,7 +130,10 @@ class DigitalLibrary(object):
         hash_ssdeep = ssdeep.hash(doc_data)
         self._check_duplicated(hash_md5, hash_ssdeep, doc_size)
         # Copy the document to the library.
-        path = os.path.join(*map(lambda i: hash_md5[i-4:i], range(4, 32 + 4, 4)))
+        path = ''
+        for i in xrange(self._dir_levels):
+            path = os.path.join(path, hash_md5[:i + 1])
+        path = os.path.join(path, hash_md5)
         mime_type = self._magic.buffer(doc_data)
         if mime_type not in self.MIME_TYPES:
             raise error.DocumentNotSupported()
