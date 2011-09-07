@@ -18,7 +18,6 @@
 
 import os
 import hashlib
-import threading
 
 import magic
 import ssdeep
@@ -26,15 +25,6 @@ import ssdeep
 from diglib.core import error
 from diglib.core.lang import get_lang
 from diglib.core.handlers import get_handler
-
-
-def _synchronized(lock):
-    def decorator(f):
-        def wrapper(*args, **kwargs):
-            with lock:
-                return f(*args, **kwargs)
-        return wrapper
-    return decorator
 
 
 class Document(object):
@@ -105,8 +95,6 @@ class DigitalLibrary(object):
     # documents in the database.
     MIN_TERMS = 100
 
-    LOCK = threading.RLock() # Shared by all instances of this class!
-
     def __init__(self, library_dir, index_class, database_class):
         super(DigitalLibrary, self).__init__()
         if not os.path.isdir(library_dir):
@@ -119,7 +107,6 @@ class DigitalLibrary(object):
         self._magic = magic.open(magic.MAGIC_MIME_TYPE | magic.MAGIC_NO_CHECK_TOKENS)
         self._magic.load()
 
-    @_synchronized(LOCK)
     def add_doc(self, doc_path, tags):
         tags = set([self._normalize_tag(tag) for tag in tags])
         with open(doc_path) as file:
@@ -189,7 +176,6 @@ class DigitalLibrary(object):
         self._database.add_doc(doc)
         return doc
 
-    @_synchronized(LOCK)
     def get_doc(self, hash_md5):
         doc = self._database.get_doc(hash_md5)
         if doc:
@@ -199,7 +185,6 @@ class DigitalLibrary(object):
         else:
             raise error.DocumentNotFound()
 
-    @_synchronized(LOCK)
     def delete_doc(self, hash_md5):
         doc = self._database.get_doc(hash_md5)
         doc.set_documents_dir(self._documents_dir)
@@ -214,22 +199,18 @@ class DigitalLibrary(object):
         self._database.delete_doc(hash_md5)
         self._index.delete_doc(hash_md5)
 
-    @_synchronized(LOCK)
     def get_all_tags(self):
         return self._database.get_all_tags()
 
-    @_synchronized(LOCK)
     def get_tag_freq(self, tag):
         return self._database.get_tag_freq(tag)    
 
-    @_synchronized(LOCK)
     def rename_tag(self, old_tag, new_tag):
         old_tag = self._normalize_tag(old_tag)
         new_tag = self._normalize_tag(new_tag)
         self._database.rename_tag(old_tag, new_tag)
         self._index.rename_tag(old_tag, new_tag)
 
-    @_synchronized(LOCK)
     def update_tags(self, hash_md5, tags):
         tags = set([self._normalize_tag(tag) for tag in tags])
         if not tags and self._index.get_doc_terms_count(hash_md5) < self.MIN_TERMS:
@@ -238,12 +219,10 @@ class DigitalLibrary(object):
             self._database.update_tags(hash_md5, tags)
             self._index.update_tags(hash_md5, tags)
 
-    @_synchronized(LOCK)
     def search(self, query, tags, start=None, count=None):
         tags = set([self._normalize_tag(tag) for tag in tags])
         return self._index.search(query, tags, start, count)
 
-    @_synchronized(LOCK)
     def close(self):
         self._database.close()
         self._index.close()
@@ -266,4 +245,3 @@ class DigitalLibrary(object):
         if not isinstance(tag, unicode):
             tag = tag.decode('utf-8')
         return tag
-        

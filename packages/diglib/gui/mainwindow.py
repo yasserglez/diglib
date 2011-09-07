@@ -16,10 +16,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import time
 import math
 import urllib
-import threading
 
 import gtk
 import pango
@@ -81,9 +79,7 @@ class MainWindow(XMLWidget):
         self._library = library
         self._search_timeout_id = 0
         self._search_timeout = 1000 # milliseconds.
-        self._thread = threading.Thread()
-        self._thread.start()
-        self._thread_lock = threading.Lock()
+        self._update_docs_iconview_id = 0
         # Initialize widgets.
         self._main_window.set_title(about.NAME)
         self._init_tags_treeview()
@@ -179,32 +175,37 @@ class MainWindow(XMLWidget):
         tags = dialog.get_tags()
         dialog.destroy()
         if response == gtk.RESPONSE_OK:
+            # Stop the current query (if any).
+            if self._update_docs_iconview_id > 0:
+                gobject.source_remove(self._update_docs_iconview_id)
             try:
                 self._library.add_doc(filename, tags)
             except error.DocumentDuplicatedExact:
-                error = 'The document is already in the library.'
+                message = 'The document is already in the library.'
             except error.DocumentDuplicatedSimilar:
-                error = 'A similar document is already in the library.'
+                message = 'A similar document is already in the library.'
             except error.DocumentNotRetrievable:
-                error = 'The document is not retrievable.'
+                message = 'The document is not retrievable.'
             except error.DocumentNotSupported:
-                error = 'The format of the document not supported.'
+                message = 'The format of the document not supported.'
             else:
-                error = None
-            if error:
+                message = None
+            if message:
                 dialog = gtk.MessageDialog(self._main_window, gtk.DIALOG_MODAL,
                                            gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
                                            'Could not import the document.')
-                dialog.format_secondary_text(error)
+                dialog.format_secondary_text(message)
                 dialog.run()
                 dialog.destroy()
-            else:
-                self._update_tags_treeview(True)
+            self._update_tags_treeview(True)
 
     def on_import_dir(self, *args):
         window = ImportDirectoryWindow(self._library)
         response = window.run()
         if response == gtk.RESPONSE_OK:
+            # Stop the current query (if any).
+            if self._update_docs_iconview_id > 0:
+                gobject.source_remove(self._update_docs_iconview_id)
             self._update_tags_treeview(True)
 
     def on_open_docs(self, *args):
@@ -240,6 +241,9 @@ class MainWindow(XMLWidget):
             response = dialog.run()
             dialog.destroy()
             if response == gtk.RESPONSE_YES:
+                # Stop the current query (if any).
+                if self._update_docs_iconview_id > 0:
+                    gobject.source_remove(self._update_docs_iconview_id)
                 for hash_md5 in selected_docs:
                     self._library.delete_doc(hash_md5)
                 self._update_tags_treeview(True)
@@ -255,6 +259,9 @@ class MainWindow(XMLWidget):
         edited_tags = dialog.get_tags()
         dialog.destroy()
         if response == gtk.RESPONSE_OK and edited_tags != common_tags:
+            # Stop the current query (if any).
+            if self._update_docs_iconview_id > 0:
+                gobject.source_remove(self._update_docs_iconview_id)
             removed_tags = common_tags.difference(edited_tags)
             added_tags = edited_tags.difference(common_tags)
             try:
@@ -318,11 +325,6 @@ class MainWindow(XMLWidget):
             self._docs_liststore.foreach(self._update_docs_iconview_icons, visible_range)
 
     def on_main_window_destroy(self, widget):
-        gtk.gdk.threads_leave() # Allow the thread to acquire gtk.gdk.lock.
-        with self._thread_lock:
-            self._thread_abort = True
-        self._thread.join()
-        gtk.gdk.threads_enter()
         gtk.main_quit()
 
     def on_tag_cellrenderer_edited(self, renderer, path, new_name):
@@ -330,6 +332,9 @@ class MainWindow(XMLWidget):
         new_name = new_name.strip()
         old_name = self._tags_liststore.get_value(iter, self.TAGS_TREEVIEW_COLUMN_TAG)
         if old_name != new_name:
+            # Stop the current query (if any).
+            if self._update_docs_iconview_id > 0:
+                gobject.source_remove(self._update_docs_iconview_id)
             self._library.rename_tag(old_name, new_name)
             self._update_tags_treeview()
 
@@ -399,63 +404,50 @@ class MainWindow(XMLWidget):
             self._selected_tags != self._old_selected_tags):
             self._old_query = self._query
             self._old_selected_tags = self._selected_tags
-            # Stop the previous thread (if any), then start a new one.
-            gtk.gdk.threads_leave()
-            with self._thread_lock:
-                self._thread_abort = True
-            self._thread.join()
-            self._thread_abort = False # No lock required.
-            self._thread = threading.Thread(target=self._update_docs_iconview,
-                                            args=(self._query, self._selected_tags))
-            self._thread.start()
+            # Stop the active query (if any) and then start a new one.
+            if self._update_docs_iconview_id > 0:
+                gobject.source_remove(self._update_docs_iconview_id)
+            self._docs_liststore.clear()
+            self._update_docs_iconview_id = \
+                gobject.idle_add(self._update_docs_iconview,
+                                 self._query, self._selected_tags)
 
     def _update_docs_iconview(self, query, selected_tags):
-        gtk.gdk.threads_enter()
         self._statusbar.push(0, 'Loading documents...')
-        self._docs_liststore.clear()
-        gtk.gdk.threads_leave()
-        while True:
-            with self._thread_lock:
-                if self._thread_abort:
-                    return # Abort this thread to make a new query.
-            gtk.gdk.threads_enter()
-            start = len(self._docs_liststore)
-            gtk.gdk.threads_leave()
-            results = self._library.search(query, selected_tags, start, 10)
-            if not results:
-                break # Finished getting results.
-            load_pixbuf = start <= 40 # Load the pixbuf of the first 50 documents.
-            for hash_md5 in results:
-                doc = self._library.get_doc(hash_md5)
-                if self._docs_icon_size == self.DOC_ICON_SMALL:
-                    icon_path = doc.small_thumbnail_abspath \
-                        if doc.small_thumbnail_abspath else ''
-                    if icon_path and load_pixbuf:
-                        icon_pixbuf = gtk.gdk.pixbuf_new_from_file(icon_path)
-                    else:
-                        icon_pixbuf = self._docs_icon_small
-                elif self._docs_icon_size == self.DOC_ICON_NORMAL:
-                    icon_path = doc.normal_thumbnail_abspath \
-                        if doc.normal_thumbnail_abspath else ''
-                    if icon_path and load_pixbuf:
-                        icon_pixbuf = gtk.gdk.pixbuf_new_from_file(icon_path)
-                    else:
-                        icon_pixbuf = self._docs_icon_normal
-                elif self._docs_icon_size == self.DOC_ICON_LARGE:
-                    icon_path = doc.large_thumbnail_abspath \
-                        if doc.large_thumbnail_abspath else ''
-                    if icon_path and load_pixbuf:
-                        icon_pixbuf = gtk.gdk.pixbuf_new_from_file(icon_path)
-                    else:
-                        icon_pixbuf = self._docs_icon_large
-                gtk.gdk.threads_enter()
-                self._docs_liststore.append([doc.hash_md5, icon_path, icon_pixbuf])
-                gtk.gdk.threads_leave()
-        gtk.gdk.threads_enter()
-        docs = len(self._docs_liststore)
-        text = '%s %s' % (docs, 'documents' if docs > 1 else 'document')
-        self._statusbar.push(0, text)
-        gtk.gdk.threads_leave()
+        start = len(self._docs_liststore)
+        results = self._library.search(query, selected_tags, start, 10)
+        if not results:
+            num_docs = len(self._docs_liststore)
+            text = '%s %s' % (num_docs, 'documents' if num_docs > 1 else 'document')
+            self._statusbar.push(0, text)
+            self._update_docs_iconview_id = 0
+            return False # Finished getting results.
+        load_pixbuf = start <= 40 # Load the pixbuf of the first 50 documents.
+        for hash_md5 in results:
+            doc = self._library.get_doc(hash_md5)
+            if self._docs_icon_size == self.DOC_ICON_SMALL:
+                icon_path = doc.small_thumbnail_abspath \
+                    if doc.small_thumbnail_abspath else ''
+                if icon_path and load_pixbuf:
+                    icon_pixbuf = gtk.gdk.pixbuf_new_from_file(icon_path)
+                else:
+                    icon_pixbuf = self._docs_icon_small
+            elif self._docs_icon_size == self.DOC_ICON_NORMAL:
+                icon_path = doc.normal_thumbnail_abspath \
+                    if doc.normal_thumbnail_abspath else ''
+                if icon_path and load_pixbuf:
+                    icon_pixbuf = gtk.gdk.pixbuf_new_from_file(icon_path)
+                else:
+                    icon_pixbuf = self._docs_icon_normal
+            elif self._docs_icon_size == self.DOC_ICON_LARGE:
+                icon_path = doc.large_thumbnail_abspath \
+                    if doc.large_thumbnail_abspath else ''
+                if icon_path and load_pixbuf:
+                    icon_pixbuf = gtk.gdk.pixbuf_new_from_file(icon_path)
+                else:
+                    icon_pixbuf = self._docs_icon_large
+            self._docs_liststore.append([doc.hash_md5, icon_path, icon_pixbuf])
+        return True # Continue getting results.
 
     def _update_docs_iconview_icons(self, model, path, iter, visible_range):
         start_path, end_path = visible_range

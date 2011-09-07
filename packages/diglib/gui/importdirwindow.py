@@ -17,7 +17,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import threading
 
 import gtk
 import gobject
@@ -48,7 +47,8 @@ class ImportDirectoryWindow(XMLWidget):
         # Other instance attributes.
         self._library = library
         self._exit = False
-        self._thread = None
+        self._doc_paths = None
+        self._doc_tags = None
         # Initialize widgets.
         self._init_treeview()
 
@@ -68,64 +68,52 @@ class ImportDirectoryWindow(XMLWidget):
         self._import_dir_window.connect('destroy', self.on_import_dir_window_destroy)
         while not self._exit:
             gtk.main_iteration(True)
-        if self._thread:
-            self._thread.join()
-            return gtk.RESPONSE_OK
-        else:
-            return gtk.RESPONSE_CANCEL
+        return gtk.RESPONSE_CANCEL if (self._doc_paths is None) else gtk.RESPONSE_OK
 
     def on_import_dir_window_destroy(self, widget):
         self._exit = True
 
     def on_import_button_clicked(self, button):
         dir_path = self._filechooserbutton.get_filename()
-        tags = tags_from_text(self._tags_entry.get_text())
+        self._doc_tags = tags_from_text(self._tags_entry.get_text())
         # Disable all widgets but the ones reporting progress.
         self._table.set_sensitive(False)
         self._progress_vbox.set_sensitive(True)
         self._hbuttonbox.set_sensitive(False)
-        # Start the thread importing files.
-        self._thread = threading.Thread(target=self._import_docs, args=(dir_path, tags))
-        self._thread.start()
+        # Generating the list of documents to be imported.
+        self._doc_paths = []
+        for dirpath, _, filenames in os.walk(dir_path):
+            self._doc_paths.extend([os.path.join(dirpath, name) for name in filenames])
+        self._total_docs = len(self._doc_paths)
+        gobject.idle_add(self._import_docs)
 
     def on_cancel_button_clicked(self, button):
         self.destroy()
 
-    def _import_docs(self, dir_path, tags):
-        # Generating the list of documents to known the total number of documents.
-        doc_paths = []
-        for dirpath, _, filenames in os.walk(dir_path):
-            doc_paths.extend([os.path.join(dirpath, name) for name in filenames])
-        total_docs = len(doc_paths)
-        # Importing each document (update the widgets reporting progress).
-        for i, doc_path in enumerate(doc_paths):
-            with gtk.gdk.lock:
-                gobject.idle_add(self._update_progressbar, i + 1, total_docs)
-            try:
-                self._library.add_doc(doc_path, tags)
-            except error.DocumentDuplicatedExact:
-                result = 'The document is already in the library.'
-            except error.DocumentDuplicatedSimilar:
-                result = 'A similar document is already in the library.'
-            except error.DocumentNotRetrievable:
-                result = 'The document is not retrievable.'
-            except error.DocumentNotSupported:
-                result = 'The format of the document not supported.'
-            else:
-                result = 'The document was imported.'
-            with gtk.gdk.lock:
-                gobject.idle_add(self._update_treeview, doc_path, result)
-        with gtk.gdk.lock:
+    def _import_docs(self):
+        if not self._doc_paths:
             self._progressbar.set_fraction(1.0)
             self._progressbar.set_text('Completed')
-
-    def _update_progressbar(self, current_doc, total_docs):
-        self._progressbar.set_fraction(current_doc / float(total_docs))
+            return False # Finished importing documents.
+        doc_path = self._doc_paths.pop()
+        current_doc = self._total_docs - len(self._doc_paths)
+        self._progressbar.set_fraction((current_doc - 1) / float(self._total_docs))
         self._progressbar.set_text('Importing document %s of %s' %
-                                   (current_doc, total_docs))
-
-    def _update_treeview(self, doc_path, result):
+                                   (current_doc, self._total_docs))
+        try:
+            self._library.add_doc(doc_path, self._doc_tags)
+        except error.DocumentDuplicatedExact:
+            result = 'The document is already in the library.'
+        except error.DocumentDuplicatedSimilar:
+            result = 'A similar document is already in the library.'
+        except error.DocumentNotRetrievable:
+            result = 'The document is not retrievable.'
+        except error.DocumentNotSupported:
+            result = 'The format of the document not supported.'
+        else:
+            result = 'The document was imported.'
         self._liststore.append([os.path.basename(doc_path), doc_path, result])
         # Make the last row visible.
         last_path = (len(self._liststore) - 1, )
         self._treeview.scroll_to_cell(last_path)
+        return True # Continue importing files.

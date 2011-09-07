@@ -41,6 +41,5 @@ class GUI(object):
         icon_factory.add_default()
 
     def start(self):
-        gtk.gdk.threads_init()
         self._main_window.show()
         gtk.main()
