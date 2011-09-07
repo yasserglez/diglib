@@ -88,7 +88,7 @@ class DigitalLibrary(object):
 
     # Documents whose similarity is equal or greater
     # than this threshold will be considered equals.
-    SSDEEP_THRESHOLD = 80
+    SSDEEP_THRESHOLD = 75
 
     # A document should satisfy at least one of the following conditions
     # to be considered retrievable. This should be an invariant for all
@@ -231,7 +231,7 @@ class DigitalLibrary(object):
     def _check_duplicated(self, hash_md5, hash_ssdeep, doc_size):
         if self._database.get_doc(hash_md5):
             raise error.DocumentDuplicatedExact()
-        eps = max(0.25 * doc_size, 102400)
+        eps = max(0.5 * doc_size, 102400)
         lower_size = max(0, doc_size - eps)
         upper_size = doc_size + eps
         docs = self._database.get_similar_docs(lower_size, upper_size)
