@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import time
 import math
 import urllib
 import threading
@@ -46,7 +47,8 @@ class MainWindow(XMLWidget):
     TAGS_TREEVIEW_ROW_TAG = 2
 
     DOCS_TREEVIEW_COLUMN_ID = 0
-    DOCS_TREEVIEW_COLUMN_ICON = 1
+    DOCS_TREEVIEW_COLUMN_ICON_PATH = 1
+    DOCS_TREEVIEW_COLUMN_ICON_PIXBUF = 2
 
     DOC_ICON_SMALL = 0
     DOC_ICON_NORMAL = 1
@@ -59,6 +61,7 @@ class MainWindow(XMLWidget):
         self._tags_treeview = self._builder.get_object('tags_treeview')
         self._tags_scrolledwindow = self._builder.get_object('tags_scrolledwindow')
         self._docs_iconview = self._builder.get_object('docs_iconview')
+        self._docs_scrolledwindow = self._builder.get_object('docs_scrolledwindow')
         self._docs_menu = self._builder.get_object('docs_menu')
         self._statusbar = self._builder.get_object('statusbar')
         self._docs_menuitem = self._builder.get_object('docs_menuitem')
@@ -153,17 +156,22 @@ class MainWindow(XMLWidget):
 
     def _init_docs_iconview(self):
         # Initialize the list store and the icon view.
-        self._docs_liststore = gtk.ListStore(str, gtk.gdk.Pixbuf)
+        self._docs_liststore = gtk.ListStore(str, str, gtk.gdk.Pixbuf)
         self._docs_iconview.set_model(self._docs_liststore)
-        self._docs_iconview.set_pixbuf_column(self.DOCS_TREEVIEW_COLUMN_ICON)
+        self._docs_iconview.set_pixbuf_column(self.DOCS_TREEVIEW_COLUMN_ICON_PIXBUF)
         self._docs_iconview.set_selection_mode(gtk.SELECTION_MULTIPLE)
         self._docs_iconview.connect('selection-changed', self.on_docs_iconview_selection_changed)
         self._docs_icon_size = self.DOC_ICON_NORMAL
+        # Configure the signals to load the thumbnails of the documents.
+        adjustment = self._docs_scrolledwindow.get_hadjustment()
+        adjustment.connect('value-changed', self.on_iconview_adjustment_changed)
+        adjustment = self._docs_scrolledwindow.get_vadjustment()
+        adjustment.connect('value-changed', self.on_iconview_adjustment_changed)        
         # Default document icons.
         self._docs_icon_small = gtk.gdk.pixbuf_new_from_file_at_size(get_image('diglib-document.svg'), self._library.THUMBNAIL_SIZE_SMALL, self._library.THUMBNAIL_SIZE_SMALL)
         self._docs_icon_normal = gtk.gdk.pixbuf_new_from_file_at_size(get_image('diglib-document.svg'), self._library.THUMBNAIL_SIZE_NORMAL, self._library.THUMBNAIL_SIZE_NORMAL)
         self._docs_icon_large = gtk.gdk.pixbuf_new_from_file_at_size(get_image('diglib-document.svg'), self._library.THUMBNAIL_SIZE_LARGE, self._library.THUMBNAIL_SIZE_LARGE)
-
+        
     def on_import_file(self, *args):
         dialog = ImportFileDialog()
         response = dialog.run()
@@ -304,6 +312,11 @@ class MainWindow(XMLWidget):
                 self._docs_menu.popup(None, None, None, event.button, event.time)
                 self._docs_menu.show()
                 
+    def on_iconview_adjustment_changed(self, *args):
+        visible_range = self._docs_iconview.get_visible_range()
+        if visible_range:
+            self._docs_liststore.foreach(self._update_docs_iconview_icons, visible_range)
+
     def on_main_window_destroy(self, widget):
         gtk.gdk.threads_leave() # Allow the thread to acquire gtk.gdk.lock.
         with self._thread_lock:
@@ -408,35 +421,55 @@ class MainWindow(XMLWidget):
             gtk.gdk.threads_enter()
             start = len(self._docs_liststore)
             gtk.gdk.threads_leave()
-            count = 10 # Document batch size.
-            results = self._library.search(query, selected_tags, start, count)
-            if results:
-                for hash_md5 in results:
-                    doc = self._library.get_doc(hash_md5)
-                    if doc.normal_thumbnail_abspath:
-                        gtk.gdk.threads_enter()
-                        if self._docs_icon_size == self.DOC_ICON_SMALL:
-                            pixbuf = gtk.gdk.pixbuf_new_from_file(doc.small_thumbnail_abspath)
-                        elif self._docs_icon_size == self.DOC_ICON_NORMAL:
-                            pixbuf = gtk.gdk.pixbuf_new_from_file(doc.normal_thumbnail_abspath)
-                        elif self._docs_icon_size == self.DOC_ICON_LARGE:
-                            pixbuf = gtk.gdk.pixbuf_new_from_file(doc.large_thumbnail_abspath)
-                        gtk.gdk.threads_leave()
-                    else:
-                        if self._docs_icon_size == self.DOC_ICON_SMALL:
-                            pixbuf = self._docs_icon_small
-                        elif self._docs_icon_size == self.DOC_ICON_NORMAL:
-                            pixbuf = self._docs_icon_normal
-                        elif self._docs_icon_size == self.DOC_ICON_LARGE:
-                            pixbuf = self._docs_icon_large
-                    self._docs_liststore.append([doc.hash_md5, pixbuf])
-            else:
+            results = self._library.search(query, selected_tags, start, 10)
+            if not results:
                 break # Finished getting results.
+            load_pixbuf = start <= 40 # Load the pixbuf of the first 50 documents.
+            for hash_md5 in results:
+                doc = self._library.get_doc(hash_md5)
+                if self._docs_icon_size == self.DOC_ICON_SMALL:
+                    icon_path = doc.small_thumbnail_abspath \
+                        if doc.small_thumbnail_abspath else ''
+                    if icon_path and load_pixbuf:
+                        icon_pixbuf = gtk.gdk.pixbuf_new_from_file(icon_path)
+                    else:
+                        icon_pixbuf = self._docs_icon_small
+                elif self._docs_icon_size == self.DOC_ICON_NORMAL:
+                    icon_path = doc.normal_thumbnail_abspath \
+                        if doc.normal_thumbnail_abspath else ''
+                    if icon_path and load_pixbuf:
+                        icon_pixbuf = gtk.gdk.pixbuf_new_from_file(icon_path)
+                    else:
+                        icon_pixbuf = self._docs_icon_normal
+                elif self._docs_icon_size == self.DOC_ICON_LARGE:
+                    icon_path = doc.large_thumbnail_abspath \
+                        if doc.large_thumbnail_abspath else ''
+                    if icon_path and load_pixbuf:
+                        icon_pixbuf = gtk.gdk.pixbuf_new_from_file(icon_path)
+                    else:
+                        icon_pixbuf = self._docs_icon_large
+                gtk.gdk.threads_enter()
+                self._docs_liststore.append([doc.hash_md5, icon_path, icon_pixbuf])
+                gtk.gdk.threads_leave()
         gtk.gdk.threads_enter()
-        num_docs = len(self._docs_liststore)
-        text = '%s %s' % (num_docs, 'documents' if num_docs > 1 else 'document')
+        docs = len(self._docs_liststore)
+        text = '%s %s' % (docs, 'documents' if docs > 1 else 'document')
         self._statusbar.push(0, text)
         gtk.gdk.threads_leave()
+
+    def _update_docs_iconview_icons(self, model, path, iter, visible_range):
+        start_path, end_path = visible_range
+        icon_path = model.get_value(iter, self.DOCS_TREEVIEW_COLUMN_ICON_PATH)
+        if not icon_path or path < start_path or path > end_path:
+            if self._docs_icon_size == self.DOC_ICON_SMALL:
+                icon_pixbuf = self._docs_icon_small
+            elif self._docs_icon_size == self.DOC_ICON_NORMAL:
+                icon_pixbuf = self._docs_icon_normal
+            elif self._docs_icon_size == self.DOC_ICON_LARGE:
+                icon_pixbuf = self._docs_icon_large
+        else:
+            icon_pixbuf = gtk.gdk.pixbuf_new_from_file(icon_path)
+        model.set_value(iter, self.DOCS_TREEVIEW_COLUMN_ICON_PIXBUF, icon_pixbuf)        
 
     def _update_icons_size_widgets(self):
         self._icon_size_combobox.set_active(self._docs_icon_size)
