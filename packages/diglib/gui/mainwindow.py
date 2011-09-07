@@ -38,7 +38,6 @@ class MainWindow(XMLWidget):
 
     TAGS_TREEVIEW_COLUMN_TYPE = 0
     TAGS_TREEVIEW_COLUMN_TAG = 1
-    TAGS_TREEVIEW_COLUMN_FONT = 2
 
     TAGS_TREEVIEW_ROW_ALL = 0
     TAGS_TREEVIEW_ROW_SEPARATOR = 1
@@ -124,14 +123,13 @@ class MainWindow(XMLWidget):
 
     def _init_tags_treeview(self):
         # Initialize the list store, the cell renderer and the column of the tree view.
-        self._tags_liststore = gtk.ListStore(int, str, pango.FontDescription)
+        self._tags_liststore = gtk.ListStore(int, str)
         self._tags_treeview.set_model(self._tags_liststore)
         renderer = gtk.CellRendererText()
         renderer.connect('edited', self.on_tag_cellrenderer_edited)
         renderer.set_property('xalign', 0.5)
         column = gtk.TreeViewColumn(None, renderer)
         column.add_attribute(renderer, 'text', self.TAGS_TREEVIEW_COLUMN_TAG)
-        column.add_attribute(renderer, 'font_desc', self.TAGS_TREEVIEW_COLUMN_FONT)
         # Function to disable edition of the "special" tags.
         f = lambda column, renderer, model, iter: renderer.set_property('editable', model.get_value(iter, self.TAGS_TREEVIEW_COLUMN_TYPE) == self.TAGS_TREEVIEW_ROW_TAG)
         column.set_cell_data_func(renderer, f)
@@ -366,39 +364,25 @@ class MainWindow(XMLWidget):
         selected_tags = set(self._iter_selected_tags()) # Remember the selection.
         self._tags_liststore.clear()
         # Add the special rows.
-        self._tags_liststore.append((self.TAGS_TREEVIEW_ROW_ALL, 'All Documents', pango.FontDescription()))
-        self._tags_liststore.append((self.TAGS_TREEVIEW_ROW_SEPARATOR, None, pango.FontDescription()))
-        default_size = self._main_window.get_style().font_desc.get_size()
-        # Smallest and largest font sizes.
-        s = 0.75 * default_size
-        S = 1.5 * default_size
+        self._tags_liststore.append([self.TAGS_TREEVIEW_ROW_ALL, 'All Documents'])
+        self._tags_liststore.append([self.TAGS_TREEVIEW_ROW_SEPARATOR, None])
         # Add one row for each tag.
         all_tags = self._library.get_all_tags()
-        all_freqs = [self._library.get_tag_freq(tag) for tag in all_tags]
-        if all_freqs:
-            # Minimum and maximum frequencies.
-            f = math.log1p(min(all_freqs))
-            F = math.log1p(max(all_freqs))
-            for tag in all_tags:
-                font_desc = pango.FontDescription()
-                if F > f:
-                    t = math.log1p(self._library.get_tag_freq(tag)) # Tag frequency.
-                    font_size = int(s + (S - s) * ((t - f) / (F - f)))
-                    font_desc.set_size(font_size)
-                self._tags_liststore.append([self.TAGS_TREEVIEW_ROW_TAG, tag, font_desc])
+        for tag in all_tags:
+            self._tags_liststore.append([self.TAGS_TREEVIEW_ROW_TAG, tag])
         # Restore the selection (if possible).
         selection = self._tags_treeview.get_selection()
         if selected_tags.issubset(all_tags):
             for row in self._tags_liststore:
-                if (row[self.TAGS_TREEVIEW_COLUMN_TYPE] == self.TAGS_TREEVIEW_ROW_TAG and
-                    row[self.TAGS_TREEVIEW_COLUMN_TAG] in selected_tags):
+                if (row[self.TAGS_TREEVIEW_COLUMN_TYPE] == self.TAGS_TREEVIEW_ROW_TAG 
+                    and row[self.TAGS_TREEVIEW_COLUMN_TAG] in selected_tags):
                     selection.select_path(row.path)
         else:
             self._selected_tags = set()
             selection.unselect_all()
             selection.select_path((0, ))
         self._update_docs_iconview_wrapper(force_update_docs)
-
+        
     def _update_docs_iconview_wrapper(self, force=False):
         if (force or self._query != self._old_query or
             self._selected_tags != self._old_selected_tags):
