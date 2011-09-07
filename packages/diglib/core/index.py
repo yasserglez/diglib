@@ -144,9 +144,9 @@ class XapianIndex(Index):
     def _parse_query(self, query):
         parser = xapian.QueryParser()
         parser.set_database(self._index)
-        tag_query = parser.parse_query(query, xapian.QueryParser.FLAG_LOVEHATE, self.TAG_PREFIX)
-        metadata_query = parser.parse_query(query, xapian.QueryParser.FLAG_LOVEHATE, self.METADATA_PREFIX)
-        content_query = parser.parse_query(query, xapian.QueryParser.FLAG_LOVEHATE | xapian.QueryParser.FLAG_PHRASE, self.CONTENT_PREFIX)
+        tag_query = parser.parse_query(query, xapian.QueryParser.FLAG_LOVEHATE | xapian.QueryParser.FLAG_BOOLEAN, self.TAG_PREFIX)
+        metadata_query = parser.parse_query(query, xapian.QueryParser.FLAG_LOVEHATE | xapian.QueryParser.FLAG_BOOLEAN, self.METADATA_PREFIX)
+        content_query = parser.parse_query(query, xapian.QueryParser.FLAG_DEFAULT, self.CONTENT_PREFIX)
         stemming_query = xapian.Query.MatchNothing
         for lang in LANGUAGES:
             parser.set_stemmer(xapian.Stem(lang))
@@ -154,9 +154,10 @@ class XapianIndex(Index):
             parser.set_stopper(self._stoppers[lang])
             lang_query = parser.parse_query(query, xapian.QueryParser.FLAG_LOVEHATE, self.CONTENT_PREFIX)
             stemming_query = xapian.Query(xapian.Query.OP_OR, stemming_query, lang_query)
-        tag_query = xapian.Query(xapian.Query.OP_SCALE_WEIGHT, tag_query, 15)
-        metadata_query = xapian.Query(xapian.Query.OP_SCALE_WEIGHT, metadata_query, 5)
-        final_query = xapian.Query(xapian.Query.OP_OR, tag_query, metadata_query)
-        final_query = xapian.Query(xapian.Query.OP_OR, final_query, content_query)
-        final_query = xapian.Query(xapian.Query.OP_OR, final_query, stemming_query)
+        tag_query = xapian.Query(xapian.Query.OP_SCALE_WEIGHT, tag_query, 20)
+        metadata_query = xapian.Query(xapian.Query.OP_SCALE_WEIGHT, metadata_query, 10)
+        content_query = xapian.Query(xapian.Query.OP_SCALE_WEIGHT, content_query, 5)
+        final_query = xapian.Query(xapian.Query.OP_OR,
+                                   [tag_query, metadata_query,
+                                    content_query, stemming_query])
         return final_query
