@@ -85,6 +85,8 @@ class ImportDirectoryWindow(XMLWidget):
         for dirpath, _, filenames in os.walk(dir_path):
             self._doc_paths.extend([os.path.join(dirpath, name) for name in filenames])
         self._total_docs = len(self._doc_paths)
+        self._progressbar.set_fraction(0)
+        self._progressbar.set_text('Importing document %s of %s' % (1, self._total_docs))        
         gobject.idle_add(self._import_docs)
 
     def on_cancel_button_clicked(self, button):
@@ -97,9 +99,9 @@ class ImportDirectoryWindow(XMLWidget):
             return False # Finished importing documents.
         doc_path = self._doc_paths.pop()
         current_doc = self._total_docs - len(self._doc_paths)
-        self._progressbar.set_fraction((current_doc - 1) / float(self._total_docs))
+        self._progressbar.set_fraction(current_doc / float(self._total_docs))
         self._progressbar.set_text('Importing document %s of %s' %
-                                   (current_doc, self._total_docs))
+                                   (current_doc + 1, self._total_docs))
         try:
             self._library.add_doc(doc_path, self._doc_tags)
         except error.DocumentDuplicatedExact:
