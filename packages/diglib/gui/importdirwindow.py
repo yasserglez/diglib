@@ -43,6 +43,7 @@ class ImportDirectoryWindow(XMLWidget):
         self._progress_vbox = self._builder.get_object('progress_vbox')
         self._tags_entry = self._builder.get_object('tags_entry')
         self._filechooserbutton = self._builder.get_object('filechooserbutton')
+        self._delete_checkbutton = self._builder.get_object('delete_checkbutton')
         self._liststore = gtk.ListStore(str, str, str)
         # Other instance attributes.
         self._library = library
@@ -80,6 +81,7 @@ class ImportDirectoryWindow(XMLWidget):
         self._table.set_sensitive(False)
         self._progress_vbox.set_sensitive(True)
         self._hbuttonbox.set_sensitive(False)
+        self._delete_checkbutton.set_sensitive(False)
         # Generating the list of documents to be imported.
         self._doc_paths = []
         for dirpath, _, filenames in os.walk(dir_path):
@@ -106,6 +108,8 @@ class ImportDirectoryWindow(XMLWidget):
             self._library.add_doc(doc_path, self._doc_tags)
         except error.DocumentDuplicatedExact:
             result = 'The document is already in the library.'
+            if self._delete_checkbutton.get_active():
+                os.remove(doc_path)
         except error.DocumentDuplicatedSimilar:
             result = 'A similar document is already in the library.'
         except error.DocumentNotRetrievable:
@@ -114,6 +118,8 @@ class ImportDirectoryWindow(XMLWidget):
             result = 'The format of the document not supported.'
         else:
             result = 'The document was imported.'
+            if self._delete_checkbutton.get_active():
+                os.remove(doc_path)            
         self._liststore.append([os.path.basename(doc_path), doc_path, result])
         # Make the last row visible.
         last_path = (len(self._liststore) - 1, )
