@@ -144,15 +144,17 @@ class XapianIndex(Index):
     def _parse_query(self, query):
         parser = xapian.QueryParser()
         parser.set_database(self._index)
+        parser.set_default_op(xapian.Query.OP_AND)
+        default_flags = xapian.QueryParser.FLAG_LOVEHATE | xapian.QueryParser.FLAG_BOOLEAN | xapian.QueryParser.FLAG_PHRASE
         tag_query = parser.parse_query(query, xapian.QueryParser.FLAG_LOVEHATE | xapian.QueryParser.FLAG_BOOLEAN, self.TAG_PREFIX)
-        metadata_query = parser.parse_query(query, xapian.QueryParser.FLAG_LOVEHATE | xapian.QueryParser.FLAG_BOOLEAN, self.METADATA_PREFIX)
-        content_query = parser.parse_query(query, xapian.QueryParser.FLAG_DEFAULT, self.CONTENT_PREFIX)
+        metadata_query = parser.parse_query(query, default_flags, self.METADATA_PREFIX)
+        content_query = parser.parse_query(query, default_flags, self.CONTENT_PREFIX)
         stemming_query = xapian.Query.MatchNothing
         for lang in LANGUAGES:
             parser.set_stemmer(xapian.Stem(lang))
             parser.set_stemming_strategy(xapian.QueryParser.STEM_SOME)
             parser.set_stopper(self._stoppers[lang])
-            lang_query = parser.parse_query(query, xapian.QueryParser.FLAG_LOVEHATE, self.CONTENT_PREFIX)
+            lang_query = parser.parse_query(query, default_flags, self.CONTENT_PREFIX)
             stemming_query = xapian.Query(xapian.Query.OP_OR, stemming_query, lang_query)
         tag_query = xapian.Query(xapian.Query.OP_SCALE_WEIGHT, tag_query, 20)
         metadata_query = xapian.Query(xapian.Query.OP_SCALE_WEIGHT, metadata_query, 10)
