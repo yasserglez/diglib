@@ -199,11 +199,14 @@ class DigitalLibrary(object):
         self._database.delete_doc(hash_md5)
         self._index.delete_doc(hash_md5)
 
-    def get_total_docs(self):
-        return self._database.get_total_docs()
+    def get_doc_count(self):
+        return self._database.get_doc_count()
 
     def get_all_tags(self):
         return self._database.get_all_tags()
+    
+    def get_tag_count(self, tag):
+        return self._database.get_tag_count(tag)
 
     def get_tag_freq(self, tag):
         return self._database.get_tag_freq(tag)    

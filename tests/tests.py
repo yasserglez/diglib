@@ -207,15 +207,25 @@ class TestDigitalLibrary(unittest.TestCase):
         with self.assertRaises(error.DocumentNotRetrievable):
             self._library.update_tags(doc.hash_md5, set())
             
-    def test_get_total_docs(self):
+    def test_get_doc_count(self):
         self.test_add_doc_ps()
-        self.assertEqual(self._library.get_total_docs(), 1)
+        self.assertEqual(self._library.get_doc_count(), 1)
         self.test_add_doc_txt()
-        self.assertEqual(self._library.get_total_docs(), 2)
+        self.assertEqual(self._library.get_doc_count(), 2)
         self.test_add_doc_pdf()
-        self.assertEqual(self._library.get_total_docs(), 3)
+        self.assertEqual(self._library.get_doc_count(), 3)
         self.test_add_doc_djvu()
-        self.assertEqual(self._library.get_total_docs(), 4)
+        self.assertEqual(self._library.get_doc_count(), 4)
+        
+    def test_get_tag_count(self):
+        self.test_add_doc_ps()
+        self.test_add_doc_txt()
+        self.test_add_doc_pdf()
+        self.test_add_doc_djvu()
+        self.assertEqual(self._library.get_tag_count('d'), 1)
+        self.assertEqual(self._library.get_tag_count('c'), 2)
+        self.assertEqual(self._library.get_tag_count('b'), 3)
+        self.assertEqual(self._library.get_tag_count('a'), 4)
 
     def test_get_tag_freq(self):
         self.test_add_doc_ps()
@@ -225,7 +235,7 @@ class TestDigitalLibrary(unittest.TestCase):
         self.assertEqual(self._library.get_tag_freq('d'), 1.0/4.0)
         self.assertEqual(self._library.get_tag_freq('c'), 2.0/4.0)
         self.assertEqual(self._library.get_tag_freq('b'), 3.0/4.0)
-        self.assertEqual(self._library.get_tag_freq('a'), 1.0)
+        self.assertEqual(self._library.get_tag_freq('a'), 4.0/4.0)
 
     def test_search_empty(self):
         self.assertListEqual(self._library.search('foo bar', set()), [])
@@ -254,7 +264,7 @@ class TestDigitalLibrary(unittest.TestCase):
         self.test_add_doc_pdf()
         results = self._library.search('+VEDA EDA', set('abc'))
         self.assertListEqual(results, [txt_doc.hash_md5])
-        
+
     def _assert_docs_equal(self, x, y):
         self.assertEqual(x.hash_md5, y.hash_md5)
         self.assertEqual(x.hash_ssdeep, y.hash_ssdeep)

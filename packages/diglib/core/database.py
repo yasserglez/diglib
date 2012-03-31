@@ -172,10 +172,14 @@ class SQLAlchemyDatabase(Database):
         sqlalchemy_doc = session.query(SQLAlchemyDocument) \
             .filter_by(hash_md5=hash_md5).scalar()
         if sqlalchemy_doc:
+            for tag in [sqlalchemy_tag.name for sqlalchemy_tag in sqlalchemy_doc.tags]:
+                if self.get_tag_count(tag) == 1:
+                    sqlalchemy_tag = self._normalize_tag(session, tag)
+                    session.delete(sqlalchemy_tag)
             session.delete(sqlalchemy_doc)
             session.commit()
         session.close()
-        
+
     def get_all_tags(self):
         tags = set()
         session = self._sessionmaker()
@@ -185,19 +189,23 @@ class SQLAlchemyDatabase(Database):
         session.close()
         return tags
     
-    def get_total_docs(self):
+    def get_doc_count(self):
         session = self._sessionmaker()
-        total_docs = session.query(SQLAlchemyDocument).count()
-        return total_docs
+        doc_count = session.query(SQLAlchemyDocument).count()
+        return doc_count
+    
+    def get_tag_count(self, tag):
+        session = self._sessionmaker()
+        query = session.query(SQLAlchemyTag).filter_by(name=tag)
+        sqlalchemy_tag = query.scalar()
+        tag_count = len(sqlalchemy_tag.documents) if sqlalchemy_tag else 0
+        return tag_count
 
     def get_tag_freq(self, tag):
-        session = self._sessionmaker()
-        total_docs = session.query(SQLAlchemyDocument).count()
-        if total_docs:
-            query = session.query(SQLAlchemyTag).filter_by(name=tag)
-            sqlalchemy_tag = query.scalar()
-            tag_docs = len(sqlalchemy_tag.documents) if sqlalchemy_tag else 0
-            return tag_docs / float(total_docs)
+        doc_count = self.get_doc_count()
+        if doc_count:
+            tag_count = self.get_tag_count(tag)
+            return tag_count / float(doc_count)
         else:
             return 0.0
 
