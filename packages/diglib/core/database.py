@@ -184,6 +184,11 @@ class SQLAlchemyDatabase(Database):
             tags.add(sqlalchemy_tag.name)
         session.close()
         return tags
+    
+    def get_total_docs(self):
+        session = self._sessionmaker()
+        total_docs = session.query(SQLAlchemyDocument).count()
+        return total_docs
 
     def get_tag_freq(self, tag):
         session = self._sessionmaker()

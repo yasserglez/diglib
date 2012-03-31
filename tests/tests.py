@@ -206,6 +206,16 @@ class TestDigitalLibrary(unittest.TestCase):
         doc = self._library.add_doc(doc_path, set('abc'))
         with self.assertRaises(error.DocumentNotRetrievable):
             self._library.update_tags(doc.hash_md5, set())
+            
+    def test_get_total_docs(self):
+        self.test_add_doc_ps()
+        self.assertEqual(self._library.get_total_docs(), 1)
+        self.test_add_doc_txt()
+        self.assertEqual(self._library.get_total_docs(), 2)
+        self.test_add_doc_pdf()
+        self.assertEqual(self._library.get_total_docs(), 3)
+        self.test_add_doc_djvu()
+        self.assertEqual(self._library.get_total_docs(), 4)
 
     def test_get_tag_freq(self):
         self.test_add_doc_ps()
