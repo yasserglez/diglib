@@ -19,5 +19,5 @@
 NAME = 'Digital Library'
 DESCRIPTION = 'Digital document management software.'
 AUTHOR = 'Yasser González-Fernández <ygonzalezfernandez@gmail.com>'
-COPYRIGHT = 'Copyright (C) 2011 Yasser González-Fernández'
-VERSION = '1.3.1'
+COPYRIGHT = 'Copyright (C) 2011-2012 Yasser González-Fernández'
+VERSION = '1.3.2'
