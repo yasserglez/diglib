@@ -246,13 +246,13 @@ class TestDigitalLibrary(unittest.TestCase):
     def test_search_simple(self):
         txt_doc = self.test_add_doc_txt()
         pdf_doc = self.test_add_doc_pdf()
-        results = self._library.search('+VEDA evolutionary optimization', set())
+        results = self._library.search('+VEDA EDA', set())
         self.assertListEqual(results, [pdf_doc.hash_md5, txt_doc.hash_md5])
 
     def test_search_filtered(self):
         txt_doc = self.test_add_doc_txt()
         self.test_add_doc_pdf()
-        results = self._library.search('+VEDA evolutionary optimization', set('abc'))
+        results = self._library.search('+VEDA EDA', set('abc'))
         self.assertListEqual(results, [txt_doc.hash_md5])
         
     def _assert_docs_equal(self, x, y):
