@@ -1,0 +1,23 @@
+sudo: false
+language: python
+python:
+  - 2.7
+before_install:
+  - BUILD_LIB=1 pip install ssdeep
+script:
+  - python tests/runtests.py
+addons:
+  apt:
+    packages:
+    - build-essential
+    - djvulibre-bin
+    - ghostscript
+    - imagemagick
+    - poppler-utils
+    - python-cairo
+    - python-djvu
+    - python-imaging
+    - python-magic
+    - python-poppler
+    - python-sqlalchemy
+    - python-xapian
