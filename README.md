@@ -1,9 +1,14 @@
 diglib
 ======
 
-A (personal) digital document management software.
+[![Build Status](https://travis-ci.org/yasserglez/diglib.svg?branch=master)](https://travis-ci.org/yasserglez/diglib)
 
-Requirements (mostly Debian/Ubuntu packages):
+A personal digital document management software.
+
+Requirements
+------------
+
+Most requirements can be installed as Debian/Ubuntu packages.
 
 * djvulibre-bin
 * ghostscript
@@ -16,4 +21,4 @@ Requirements (mostly Debian/Ubuntu packages):
 * python-poppler
 * python-sqlalchemy
 * python-xapian
-* ssdeep for Python (http://bitbucket.org/denis/ssdeep)
+* [ssdeep](https://pypi.python.org/pypi/ssdeep)
