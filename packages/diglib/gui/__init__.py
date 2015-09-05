@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# diglib: Digital Library
-# Copyright (C) 2011-2013 Yasser González Fernández <ygonzalezfernandez@gmail.com>
+# diglib: Personal digital document management software.
+# Copyright (C) 2011-2015 Yasser Gonzalez <yasserglez@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -32,8 +32,8 @@ class GUI(object):
     def _init_icons(self):
         gtk.window_set_default_icon_from_file(get_image('diglib.svg'))
         icon_factory = gtk.IconFactory()
-        for stock_id in ('diglib-document-add', 'diglib-document-open', 
-                         'diglib-document-copy', 'diglib-document-delete', 
+        for stock_id in ('diglib-document-add', 'diglib-document-open',
+                         'diglib-document-copy', 'diglib-document-delete',
                          'diglib-document-tag', 'diglib-directory-add'):
             icon_path = get_image('%s.svg' % stock_id)
             icon_set = gtk.IconSet(gtk.gdk.pixbuf_new_from_file(icon_path))

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# diglib: Digital Library
-# Copyright (C) 2011-2013 Yasser González Fernández <ygonzalezfernandez@gmail.com>
+# diglib: Personal digital document management software.
+# Copyright (C) 2011-2015 Yasser Gonzalez <yasserglez@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -36,7 +36,7 @@ class Database(object):
 
     # Get documents whose size is between the given values.
     def get_similar_docs(self, lower_size, upper_size):
-        raise NotImplementedError()    
+        raise NotImplementedError()
 
     def delete_doc(self, hash_md5):
         raise NotImplementedError()
@@ -47,7 +47,7 @@ class Database(object):
 
     # Get the frequency of a tag.
     def get_tag_freq(self, tag):
-        raise NotImplementedError()      
+        raise NotImplementedError()
 
     def rename_tag(self, old_tag, new_tag):
         raise NotImplementedError()
@@ -89,8 +89,8 @@ class SQLAlchemyDocument(SQLAlchemyBase):
     language_code = Column(String, nullable=False)
     tags = relationship(SQLAlchemyTag, secondary='document_tags', backref='documents')
 
-    def __init__(self, hash_md5, hash_ssdeep, mime_type, document_path, 
-                 document_size, small_thumbnail_path, normal_thumbnail_path, 
+    def __init__(self, hash_md5, hash_ssdeep, mime_type, document_path,
+                 document_size, small_thumbnail_path, normal_thumbnail_path,
                  large_thumbnail_path, language_code, tags):
         self.hash_md5 = hash_md5
         self.hash_ssdeep = hash_ssdeep
@@ -110,7 +110,7 @@ document_tags = Table('document_tags', SQLAlchemyBase.metadata,
 
 
 class SQLAlchemyDatabase(Database):
-    
+
     def __init__(self, database_file):
         super(SQLAlchemyDatabase, self).__init__(database_file)
         engine = create_engine('sqlite:///%s' % database_file)
@@ -188,12 +188,12 @@ class SQLAlchemyDatabase(Database):
             tags.add(sqlalchemy_tag.name)
         session.close()
         return tags
-    
+
     def get_doc_count(self):
         session = self._sessionmaker()
         doc_count = session.query(SQLAlchemyDocument).count()
         return doc_count
-    
+
     def get_tag_count(self, tag):
         session = self._sessionmaker()
         query = session.query(SQLAlchemyTag).filter_by(name=tag)

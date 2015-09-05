@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# diglib: Digital Library
-# Copyright (C) 2011-2013 Yasser González Fernández <ygonzalezfernandez@gmail.com>
+# diglib: Personal digital document management software.
+# Copyright (C) 2011-2015 Yasser Gonzalez <yasserglez@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -24,7 +24,7 @@ from diglib.core.lang import LANGUAGES, get_stopwords
 class Index(object):
 
     def __init__(self, index_dir):
-        pass 
+        pass
 
     def add_doc(self, doc, content, metadata):
         raise NotImplementedError()
@@ -32,9 +32,9 @@ class Index(object):
     # Get the number of terms of a document.
     def get_doc_terms_count(self, hash_md5):
         raise NotImplementedError()
-    
+
     def delete_doc(self, hash_md5):
-        raise NotImplementedError()    
+        raise NotImplementedError()
 
     def rename_tag(self, old_tag, new_tag):
         raise NotImplementedError()
@@ -42,9 +42,9 @@ class Index(object):
     def update_tags(self, hash_md5, tags):
         raise NotImplementedError()
 
-    # Get the MD5 hashes of the documents with the given tags that match the query. 
+    # Get the MD5 hashes of the documents with the given tags that match the query.
     def search(self, query, tags, start=None, count=None):
-        raise NotImplementedError()    
+        raise NotImplementedError()
 
     def close(self):
         raise NotImplementedError()
@@ -59,7 +59,7 @@ class XapianIndex(Index):
     CONTENT_PREFIX = 'C'
     METADATA_PREFIX = 'M'
     TAG_PREFIX = 'T'
-    
+
     def __init__(self, index_dir):
         super(XapianIndex, self).__init__(index_dir)
         self._index = xapian.WritableDatabase(index_dir, xapian.DB_CREATE_OR_OPEN)
@@ -89,7 +89,7 @@ class XapianIndex(Index):
         xapian_doc = self._get_xapian_doc(hash_md5)
         terms_count = xapian_doc.termlist_count()
         return terms_count
-    
+
     def delete_doc(self, hash_md5):
         self._index.delete_document(self.ID_PREFIX + hash_md5)
         self._index.flush()

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# diglib: Digital Library
-# Copyright (C) 2011-2013 Yasser González Fernández <ygonzalezfernandez@gmail.com>
+# diglib: Personal digital document management software.
+# Copyright (C) 2011-2015 Yasser Gonzalez <yasserglez@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -27,7 +27,7 @@ from diglib.gui.xmlwidget import XMLWidget
 
 
 class ImportDirectoryWindow(XMLWidget):
-    
+
     TREEVIEW_COLUMN_NAME = 0
     TREEVIEW_COLUMN_PATH = 1
     TREEVIEW_COLUMN_RESULT = 2
@@ -88,7 +88,7 @@ class ImportDirectoryWindow(XMLWidget):
             self._doc_paths.extend([os.path.join(dirpath, name) for name in filenames])
         self._total_docs = len(self._doc_paths)
         self._progressbar.set_fraction(0)
-        self._progressbar.set_text('Importing document %s of %s' % (1, self._total_docs))        
+        self._progressbar.set_text('Importing document %s of %s' % (1, self._total_docs))
         gobject.idle_add(self._import_docs)
 
     def on_cancel_button_clicked(self, button):
@@ -121,7 +121,7 @@ class ImportDirectoryWindow(XMLWidget):
         else:
             result = 'The document was imported.'
             if self._delete_checkbutton.get_active():
-                os.remove(doc_path)            
+                os.remove(doc_path)
         self._liststore.append([os.path.basename(doc_path), doc_path, result])
         # Make the last row visible.
         last_path = (len(self._liststore) - 1, )

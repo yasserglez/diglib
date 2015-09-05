@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# diglib: Digital Library
-# Copyright (C) 2011-2012 Yasser González Fernández <ygonzalezfernandez@gmail.com>
+# diglib: Personal digital document management software.
+# Copyright (C) 2011-2015 Yasser Gonzalez <yasserglez@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -41,15 +41,15 @@ class Document(object):
     @property
     def normal_thumbnail_abspath(self):
         return (os.path.join(self._thumbnails_dir, self.normal_thumbnail_path)
-                if self.normal_thumbnail_path else self.normal_thumbnail_path)            
+                if self.normal_thumbnail_path else self.normal_thumbnail_path)
 
     @property
     def large_thumbnail_abspath(self):
         return (os.path.join(self._thumbnails_dir, self.large_thumbnail_path)
                 if self.large_thumbnail_path else self.large_thumbnail_path)
 
-    def __init__(self, hash_md5, hash_ssdeep, mime_type, document_path, 
-                 document_size, small_thumbnail_path, normal_thumbnail_path, 
+    def __init__(self, hash_md5, hash_ssdeep, mime_type, document_path,
+                 document_size, small_thumbnail_path, normal_thumbnail_path,
                  large_thumbnail_path, language_code, tags):
         self.hash_md5 = hash_md5
         self.hash_ssdeep = hash_ssdeep
@@ -135,8 +135,8 @@ class DigitalLibrary(object):
         small_thumbnail_path = None
         normal_thumbnail_path = None
         large_thumbnail_path = None
-        for size_name, size in (('small', self.THUMBNAIL_SIZE_SMALL), 
-                                ('normal', self.THUMBNAIL_SIZE_NORMAL), 
+        for size_name, size in (('small', self.THUMBNAIL_SIZE_SMALL),
+                                ('normal', self.THUMBNAIL_SIZE_NORMAL),
                                 ('large', self.THUMBNAIL_SIZE_LARGE)):
             thumbnail_data = handler.get_thumbnail(size, size)
             if thumbnail_data:
@@ -156,8 +156,8 @@ class DigitalLibrary(object):
         content = handler.get_content()
         metadata = handler.get_metadata()
         language_code = get_lang(content)
-        doc = Document(hash_md5, hash_ssdeep, mime_type, doc_path, 
-                       doc_size, small_thumbnail_path, normal_thumbnail_path, 
+        doc = Document(hash_md5, hash_ssdeep, mime_type, doc_path,
+                       doc_size, small_thumbnail_path, normal_thumbnail_path,
                        large_thumbnail_path, language_code, tags)
         doc.set_documents_dir(self._documents_dir)
         doc.set_thumbnails_dir(self._thumbnails_dir)
@@ -204,12 +204,12 @@ class DigitalLibrary(object):
 
     def get_all_tags(self):
         return self._database.get_all_tags()
-    
+
     def get_tag_count(self, tag):
         return self._database.get_tag_count(tag)
 
     def get_tag_freq(self, tag):
-        return self._database.get_tag_freq(tag)    
+        return self._database.get_tag_freq(tag)
 
     def rename_tag(self, old_tag, new_tag):
         old_tag = self._normalize_tag(old_tag)

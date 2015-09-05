@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# diglib: Digital Library
-# Copyright (C) 2011-2013 Yasser González Fernández <ygonzalezfernandez@gmail.com>
+# diglib: Personal digital document management software.
+# Copyright (C) 2011-2015 Yasser Gonzalez <yasserglez@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -17,7 +17,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 NAME = 'Digital Library'
-DESCRIPTION = 'Digital document management software.'
-AUTHOR = 'Yasser González Fernández <ygonzalezfernandez@gmail.com>'
-COPYRIGHT = 'Copyright (C) 2011-2013 Yasser González Fernández'
+DESCRIPTION = 'Personal digital document management software.'
+AUTHOR = 'Yasser Gonzalez <yasserglez@gmail.com>'
+COPYRIGHT = 'Copyright (C) 2011-2015 Yasser Gonzalez'
 VERSION = '1.3.4'

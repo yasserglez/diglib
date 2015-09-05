@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# diglib: Digital Library
-# Copyright (C) 2011-2013 Yasser González Fernández <ygonzalezfernandez@gmail.com>
+# diglib: Personal digital document management software.
+# Copyright (C) 2011-2015 Yasser Gonzalez <yasserglez@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -48,7 +48,7 @@ class MainWindow(XMLWidget):
     DOC_ICON_SMALL = 0
     DOC_ICON_NORMAL = 1
     DOC_ICON_LARGE = 2
-    
+
     def __init__(self, library):
         super(MainWindow, self).__init__('main_window')
         # Instance attributes for widgets.
@@ -158,12 +158,12 @@ class MainWindow(XMLWidget):
         adjustment = self._docs_scrolledwindow.get_hadjustment()
         adjustment.connect('value-changed', self.on_iconview_adjustment_changed)
         adjustment = self._docs_scrolledwindow.get_vadjustment()
-        adjustment.connect('value-changed', self.on_iconview_adjustment_changed)        
+        adjustment.connect('value-changed', self.on_iconview_adjustment_changed)
         # Default document icons.
         self._docs_icon_small = gtk.gdk.pixbuf_new_from_file_at_size(get_image('diglib-document.svg'), self._library.THUMBNAIL_SIZE_SMALL, self._library.THUMBNAIL_SIZE_SMALL)
         self._docs_icon_normal = gtk.gdk.pixbuf_new_from_file_at_size(get_image('diglib-document.svg'), self._library.THUMBNAIL_SIZE_NORMAL, self._library.THUMBNAIL_SIZE_NORMAL)
         self._docs_icon_large = gtk.gdk.pixbuf_new_from_file_at_size(get_image('diglib-document.svg'), self._library.THUMBNAIL_SIZE_LARGE, self._library.THUMBNAIL_SIZE_LARGE)
-        
+
     def on_import_file(self, *args):
         dialog = ImportFileDialog()
         response = dialog.run()
@@ -210,7 +210,7 @@ class MainWindow(XMLWidget):
             open_file(doc.document_abspath)
 
     def on_copy_docs(self, *args):
-        doc_paths = [self._library.get_doc(hash_md5).document_abspath 
+        doc_paths = [self._library.get_doc(hash_md5).document_abspath
                      for hash_md5 in self._iter_selected_docs()]
         if doc_paths:
             def get_func(clipboard, selectiondata, info, data):
@@ -230,8 +230,8 @@ class MainWindow(XMLWidget):
                  if num_docs > 1 else 'selected document')
             secondary_text = 'The %s will be permanently lost.' % \
                 ('documents' if num_docs > 1 else 'document')
-            dialog = gtk.MessageDialog(self._main_window, gtk.DIALOG_MODAL, 
-                                       gtk.MESSAGE_QUESTION, 
+            dialog = gtk.MessageDialog(self._main_window, gtk.DIALOG_MODAL,
+                                       gtk.MESSAGE_QUESTION,
                                        gtk.BUTTONS_YES_NO, message)
             dialog.format_secondary_text(secondary_text)
             response = dialog.run()
@@ -243,7 +243,7 @@ class MainWindow(XMLWidget):
                 for hash_md5 in selected_docs:
                     self._library.delete_doc(hash_md5)
                 self._update_tags_treeview(True)
-                
+
     def on_tag_docs(self, *args):
         common_tags = None
         for hash_md5 in self._iter_selected_docs():
@@ -285,7 +285,7 @@ class MainWindow(XMLWidget):
         dialog = AboutDialog()
         dialog.run()
         dialog.destroy()
-        
+
     def on_show_tags_menuitem_toggled(self, checkmenuitem):
         if checkmenuitem.get_active():
             self._tags_scrolledwindow.show()
@@ -314,7 +314,7 @@ class MainWindow(XMLWidget):
                     iconview.select_path(path)
                 self._docs_menu.popup(None, None, None, event.button, event.time)
                 self._docs_menu.show()
-                
+
     def on_iconview_adjustment_changed(self, *args):
         visible_range = self._docs_iconview.get_visible_range()
         if visible_range:
@@ -337,7 +337,7 @@ class MainWindow(XMLWidget):
     def on_tags_treeview_selection_changed(self, *args):
         if self._search_timeout_id > 0:
             gobject.source_remove(self._search_timeout_id)
-        self._search_timeout_id = gobject.timeout_add(self._search_timeout, 
+        self._search_timeout_id = gobject.timeout_add(self._search_timeout,
                                                       self._search_timeout_callback)
 
     def on_search_entry_changed(self, *tags):
@@ -372,7 +372,7 @@ class MainWindow(XMLWidget):
         selection = self._tags_treeview.get_selection()
         if selected_tags.issubset(all_tags):
             for row in self._tags_liststore:
-                if (row[self.TAGS_TREEVIEW_COLUMN_TYPE] == self.TAGS_TREEVIEW_ROW_TAG 
+                if (row[self.TAGS_TREEVIEW_COLUMN_TYPE] == self.TAGS_TREEVIEW_ROW_TAG
                     and row[self.TAGS_TREEVIEW_COLUMN_TAG] in selected_tags):
                     selection.select_path(row.path)
         else:
@@ -380,7 +380,7 @@ class MainWindow(XMLWidget):
             selection.unselect_all()
             selection.select_path((0, ))
         self._update_docs_iconview_wrapper(force_update_docs)
-        
+
     def _update_docs_iconview_wrapper(self, force=False):
         if (force or self._query != self._old_query or
             self._selected_tags != self._old_selected_tags):
@@ -443,7 +443,7 @@ class MainWindow(XMLWidget):
                 icon_pixbuf = self._docs_icon_large
         else:
             icon_pixbuf = gtk.gdk.pixbuf_new_from_file(icon_path)
-        model.set_value(iter, self.DOCS_TREEVIEW_COLUMN_ICON_PIXBUF, icon_pixbuf)        
+        model.set_value(iter, self.DOCS_TREEVIEW_COLUMN_ICON_PIXBUF, icon_pixbuf)
 
     def _update_icons_size_widgets(self):
         self._icon_size_combobox.set_active(self._docs_icon_size)

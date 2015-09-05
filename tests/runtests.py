@@ -1,21 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# diglib: Digital Library
-# Copyright (C) 2011-2013 Yasser González Fernández <ygonzalezfernandez@gmail.com>
-#
-# This program is free software: you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by the Free
-# Software Foundation, either version 3 of the License, or (at your option)
-# any later version.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
-# more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
 import sys
@@ -42,7 +26,7 @@ class TestDigitalLibrary(unittest.TestCase):
     def tearDown(self):
         self._library.close()
         shutil.rmtree(self._library_dir)
-        
+
     def test_add_doc_ps(self):
         ps_path = os.path.join(self._tests_dir, 'en.ps')
         tags = set('abcd')
@@ -170,7 +154,7 @@ class TestDigitalLibrary(unittest.TestCase):
         self.assertSetEqual(modified.tags, set('abz'))
         self.assertListEqual(self._library.search('', set('c')), [])
         self.assertListEqual(self._library.search('', set('z')), [original.hash_md5])
-        
+
     def test_rename_tag_tilde(self):
         original = self.test_add_doc_txt()
         self.assertSetEqual(self._library.get_all_tags(), set('abc'))
@@ -178,7 +162,7 @@ class TestDigitalLibrary(unittest.TestCase):
         self.assertSetEqual(self._library.get_all_tags(), set(u'ábc'))
         modified = self._library.get_doc(original.hash_md5)
         self.assertSetEqual(modified.tags, set(u'ábc'))
-        self.assertListEqual(self._library.search('', set(u'á')), [original.hash_md5])        
+        self.assertListEqual(self._library.search('', set(u'á')), [original.hash_md5])
 
     def test_rename_tag_exists(self):
         original = self.test_add_doc_txt()
@@ -195,18 +179,18 @@ class TestDigitalLibrary(unittest.TestCase):
         self.assertListEqual(self._library.search('', set('xyz')), [])
         self._library.update_tags(doc.hash_md5, set('xyz'))
         self.assertListEqual(self._library.search('', set('xyz')), [doc.hash_md5])
-        
+
     def test_update_tags_tildes(self):
         doc = self.test_add_doc_txt()
         self._library.update_tags(doc.hash_md5, set(u'áéíóóñ'))
-        self.assertListEqual(self._library.search('', set(u'áéíóóñ')), [doc.hash_md5])        
+        self.assertListEqual(self._library.search('', set(u'áéíóóñ')), [doc.hash_md5])
 
     def test_update_tags_not_retrievable(self):
         doc_path = os.path.join(self._tests_dir, 'not-retrievable.txt')
         doc = self._library.add_doc(doc_path, set('abc'))
         with self.assertRaises(error.DocumentNotRetrievable):
             self._library.update_tags(doc.hash_md5, set())
-            
+
     def test_get_doc_count(self):
         self.test_add_doc_ps()
         self.assertEqual(self._library.get_doc_count(), 1)
@@ -216,7 +200,7 @@ class TestDigitalLibrary(unittest.TestCase):
         self.assertEqual(self._library.get_doc_count(), 3)
         self.test_add_doc_djvu()
         self.assertEqual(self._library.get_doc_count(), 4)
-        
+
     def test_get_tag_count(self):
         self.test_add_doc_ps()
         self.test_add_doc_txt()

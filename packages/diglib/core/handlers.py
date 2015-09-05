@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# diglib: Digital Library
-# Copyright (C) 2011-2013 Yasser González Fernández <ygonzalezfernandez@gmail.com>
+# diglib: Personal digital document management software.
+# Copyright (C) 2011-2015 Yasser Gonzalez <yasserglez@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -87,7 +87,7 @@ class PlainTextHandler(FileHandler):
 
 
 class PDFHandler(FileHandler):
-    
+
     mime_type = 'application/pdf'
 
     def __init__(self, file_path):
@@ -147,7 +147,7 @@ class DJVUHandler(FileHandler):
         super(DJVUHandler, self).__init__(file_path)
         self._pixel_format = djvu.decode.PixelFormatRgb()
         self._pixel_format.rows_top_to_bottom = True
-        self._pixel_format.y_top_to_bottom = True  
+        self._pixel_format.y_top_to_bottom = True
         self._context = djvu.decode.Context()
         self._document = self._context.new_document(djvu.decode.FileUri(self._file_path))
         self._page_job = self._document.pages[0].decode(wait=True)
@@ -221,7 +221,7 @@ class PSHandler(FileHandler):
             content = output.read()
             output.close()
         return content.strip()
-    
+
     def close(self):
         pass
 

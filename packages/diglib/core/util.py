@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# diglib: Digital Library
-# Copyright (C) 2011-2013 Yasser González Fernández <ygonzalezfernandez@gmail.com>
+# diglib: Personal digital document management software.
+# Copyright (C) 2011-2015 Yasser Gonzalez <yasserglez@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -20,7 +20,7 @@
 
 def tags_from_text(text):
     # Parses tag text, with multiple word text being activated and
-    # delineated by commas and double quotes. Quotes take precedence, 
+    # delineated by commas and double quotes. Quotes take precedence,
     # so they may contain commas.
     if not text:
         return set()
@@ -30,7 +30,7 @@ def tags_from_text(text):
         words = _split_strip(text, ' ')
         return set(words)
     words, buffer = [], []
-    # Defer splitting of non-quoted sections until we know 
+    # Defer splitting of non-quoted sections until we know
     # if there are any unquoted commas.
     to_be_split = []
     saw_loose_comma = False
@@ -60,7 +60,7 @@ def tags_from_text(text):
                     saw_loose_comma = True
                 buffer.append(c)
     except StopIteration:
-        # If we were parsing an open quote which was never closed 
+        # If we were parsing an open quote which was never closed
         # treat the buffer as unquoted.
         if buffer:
             if open_quote and ',' in buffer:
