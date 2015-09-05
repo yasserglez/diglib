@@ -1,4 +1,7 @@
-diglib is a (personal) digital document management software.
+diglib
+======
+
+A (personal) digital document management software.
 
 Requirements (mostly Debian/Ubuntu packages):
 
