@@ -1,8 +1,6 @@
 diglib
 ======
 
-[![Build Status](https://travis-ci.org/yasserglez/diglib.svg?branch=master)](https://travis-ci.org/yasserglez/diglib)
-
 A personal digital document management software.
 
 Requirements
